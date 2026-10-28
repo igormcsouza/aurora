@@ -1,0 +1,69 @@
+<!doctype html><html><head><meta charset="utf-8"><title>aurora web engine</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--c1,#1b1464);font-family:var(--font,'Noto Sans','DejaVu Sans',system-ui,sans-serif);color:var(--ink,#fff)}
+#stage{position:absolute;inset:0;overflow:hidden;background:linear-gradient(135deg,var(--c1) 0%,var(--c2) 50%,var(--c3) 100%);perspective:1800px}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
+.grid{position:absolute;inset:-200px;background-image:linear-gradient(rgba(255,255,255,.07) 2px,transparent 2px),linear-gradient(90deg,rgba(255,255,255,.07) 2px,transparent 2px);background-size:90px 90px}
+.grain{position:absolute;inset:0;opacity:.07;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:6px 6px;mix-blend-mode:overlay}
+.vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(10,5,40,.55) 100%);pointer-events:none;z-index:50}
+#world{position:absolute;inset:0;transform-style:preserve-3d}
+.abs{position:absolute}
+.word{display:inline-block;font-weight:900;font-size:150px;line-height:1.05;letter-spacing:-3px;text-shadow:0 10px 0 rgba(0,0,0,.25);will-change:transform}
+.glass{background:rgba(255,255,255,.14);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.35);border-radius:22px;box-shadow:0 18px 40px rgba(10,5,40,.35)}
+.slab{width:560px;height:78px;display:flex;align-items:center;padding-left:34px;font:700 26px 'DejaVu Sans Mono',monospace;border-left:16px solid var(--c);white-space:nowrap;overflow:hidden}
+.code{font:600 25px/1.65 'DejaVu Sans Mono',monospace;padding:30px 34px;width:560px;white-space:pre;overflow:hidden}
+.code .l{display:block;overflow:hidden;white-space:pre;width:0}
+.k{color:#ffd166}.c{color:rgba(255,255,255,.55)}
+.num{font-weight:900;font-size:190px;letter-spacing:-6px;text-shadow:0 10px 0 rgba(0,0,0,.25)}
+.chip{font-weight:800;font-size:34px;padding:12px 28px;border-radius:999px;background:#fff;color:#2a1a7a}
+.dot{position:absolute;width:20px;height:20px;border-radius:4px}
+#card{position:absolute;left:0;top:0;width:var(--cw);height:calc(var(--ch) + 36px);border-radius:20px;overflow:hidden;background:#fff;box-shadow:0 50px 120px rgba(10,5,40,.6);transform-origin:0 0}
+#bar{height:36px;background:#e9e9f0;display:flex;align-items:center;gap:10px;padding-left:16px;white-space:nowrap}
+#bar i{width:14px;height:14px;border-radius:50%;display:block}
+#doc{position:relative;width:var(--cw);height:var(--ch);background:#fff}
+#doc img.shot{position:absolute;left:0;top:0;width:100%;height:100%}
+.hl{position:absolute;border-radius:10px;box-shadow:0 0 0 4000px rgba(20,10,60,.62),0 0 0 5px #ffd166;opacity:0}
+.cursor{position:absolute;width:34px;height:34px;z-index:9;filter:drop-shadow(0 4px 4px rgba(0,0,0,.4))}
+.ring{position:absolute;width:20px;height:20px;border:5px solid #ffd166;border-radius:50%;opacity:0}
+.callout{position:absolute;font-weight:800;font-size:44px;padding:16px 30px;border-radius:18px;background:#ffd166;color:#2a1a7a;box-shadow:0 14px 0 rgba(0,0,0,.2);opacity:0;white-space:nowrap}
+.mascot{position:absolute;z-index:60}
+</style></head><body>
+<div id="stage">
+ <div class="abs blob" id="b1" style="width:700px;height:700px;background:var(--a1);left:-100px;top:-120px"></div>
+ <div class="abs blob" id="b2" style="width:800px;height:800px;background:var(--a2);right:-200px;top:200px"></div>
+ <div class="abs blob" id="b3" style="width:600px;height:600px;background:var(--a3);left:600px;bottom:-250px"></div>
+ <div class="grid" id="grid"></div><div class="grain"></div>
+ <div id="world"></div><div class="vig"></div>
+</div>
+<script src="node_modules/gsap/dist/gsap.min.js"></script>
+<script src="templates.js"></script>
+<script>
+// Contract: capture.mjs injects window.__SPEC__ = {template, duration, props, beats, theme, speech, mascot, base}.
+// Scenes are a pure function of time: window.seek(t) then screenshot. Nothing runs on wall-clock time.
+const SPEC = window.__SPEC__ || { template: 'kinetic_title', duration: 6, props: { lines: [{ text: 'aurora' }] } };
+const D = SPEC.duration, TH = Object.assign({ palette: ['#1b1464', '#5b2bd6', '#ff6a5e'], accents: ['#2bd9ff', '#ff5ea8', '#ffd166', '#7ae582', '#a78bfa', '#ff9f43'], ink: '#ffffff' }, SPEC.theme || {});
+const R = document.documentElement.style;
+['c1', 'c2', 'c3'].forEach((k, i) => R.setProperty('--' + k, TH.palette[i])); TH.accents.forEach((c, i) => R.setProperty('--a' + (i + 1), c)); R.setProperty('--ink', TH.ink);
+if (TH.font) R.setProperty('--font', TH.font);
+const base = SPEC.base || '';
+const U = p => /^(https?:|file:|data:)/.test(p) ? p : base + p;
+const W = document.getElementById('world');
+const el = (h, p) => { const d = document.createElement('div'); d.innerHTML = h; const n = d.firstElementChild; (p || W).appendChild(n); return n; };
+const tl = gsap.timeline({ paused: true });
+// living background for the whole clip: drifting blobs + scrolling grid
+tl.to('#b1', { x: 700, y: 300, duration: Math.max(D, 30), ease: 'none' }, 0).to('#b2', { x: -800, y: -200, duration: Math.max(D, 30), ease: 'none' }, 0)
+  .to('#b3', { x: 500, y: -200, duration: Math.max(D, 30), ease: 'none' }, 0).to('#grid', { x: 90, y: 90, duration: 3, ease: 'none', repeat: Math.ceil(D / 3) }, 0);
+const tpl = AURORA_TEMPLATES[SPEC.template]; if (!tpl) throw new Error('unknown template ' + SPEC.template);
+let renderT = tpl({ tl, el, W, D, P: SPEC.props || {}, beats: SPEC.beats || [], U, ACC: TH.accents, TH, gsap }) || (() => {});
+// optional mascot: two PNGs (closed/open mouth); mouth flaps inside `speech` windows ([[start,end],...] in scene seconds)
+let mouth = () => {};
+if (SPEC.mascot) {
+  const m = SPEC.mascot, sz = m.size || 360, pos = { br: `right:40px;bottom:30px`, bl: `left:40px;bottom:30px`, tr: `right:40px;top:150px`, tl: `left:40px;top:150px` }[m.corner || 'br'];
+  const box = el(`<div class="mascot" style="${pos};width:${sz}px;height:${sz}px"><img id="mc" src="${U(m.closed)}" style="width:100%;height:100%"><img id="mo" src="${U(m.open)}" style="width:100%;height:100%;position:absolute;left:0;top:0;opacity:0"></div>`, document.getElementById('stage'));
+  mouth = t => { const talking = (SPEC.speech || []).some(([a, b]) => t >= a && t <= b); document.getElementById('mo').style.opacity = talking && Math.floor(t * 8) % 2 === 0 ? 1 : 0; };
+}
+window.DUR = D;
+window.seek = t => { tl.seek(t, false); renderT(t); mouth(t); };
+window.settle = () => Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })).concat(document.fonts.ready));
+window.seek(0);
+</script></body></html>

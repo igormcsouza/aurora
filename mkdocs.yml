@@ -1,0 +1,96 @@
+site_name: aurora
+site_description: A content-creator assistant for YouTube, written in plain English. Skill-as-software for Claude Code.
+site_author: Igor Souza
+site_url: https://igormcsouza.github.io/aurora/
+
+repo_name: igormcsouza/aurora
+repo_url: https://github.com/igormcsouza/aurora
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.path
+    - navigation.top
+    - navigation.footer
+    - navigation.instant
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.tabs.link
+    - content.action.edit
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+extra:
+  social:
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/igormcsouza/
+      name: LinkedIn
+    - icon: fontawesome/brands/github
+      link: https://github.com/igormcsouza
+      name: GitHub
+    - icon: fontawesome/solid/globe
+      link: https://igormcsouza.github.io/
+      name: Personal Website
+
+copyright: Copyright &copy; 2026 Igor Souza
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - getting-started/index.md
+      - Install: getting-started/install.md
+      - Quickstart: getting-started/quickstart.md
+  - Guide:
+      - guide/index.md
+      - Commands: guide/commands.md
+      - Preferences: guide/preferences.md
+      - The pipeline: guide/pipeline.md
+      - Render engines: guide/engines.md
+      - Cost ladder: guide/cost-ladder.md
+      - Project layout: guide/project-layout.md
+  - Project:
+      - Troubleshooting: project/troubleshooting.md
+      - Contributing: project/contributing.md
+      - Known issues: project/known-issues.md
+
+validation:
+  links:
+    anchors: warn
