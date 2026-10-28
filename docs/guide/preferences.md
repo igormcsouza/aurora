@@ -28,6 +28,41 @@ The file is flat and human-editable; unknown keys are kept. Typical shape:
 }
 ```
 
+## Other kinds of channel
+
+Same file, different channel. Only the values change:
+
+=== "Cooking, Portuguese"
+
+    ```json
+    { "channel": "Fogão de Lenha", "language": "pt", "niche": "home cooking",
+      "audience": "beginners who are afraid of the oven",
+      "tone": "warm, patient, a little dramatic about butter",
+      "persona": { "character": "Dona Cida, a grandmother who narrates every recipe as a telenovela" },
+      "topics_avoid": ["diets", "calorie counting"], "blender": false }
+    ```
+
+=== "History, no persona"
+
+    ```json
+    { "channel": "Footnotes", "language": "en", "niche": "medieval history",
+      "audience": "curious adults", "tone": "dry, precise, understated",
+      "research_sources": ["https://www.jstor.org", "https://www.britannica.com"],
+      "visual_style": "maps, manuscripts, timelines", "blender": false }
+    ```
+
+=== "Kids' science, Spanish"
+
+    ```json
+    { "channel": "Chispa", "language": "es", "niche": "science for kids 6-9",
+      "tone": "playful, short sentences, lots of questions",
+      "persona": { "character": "Chispa, a curious spark who lives in a lamp" },
+      "mascot": { "closed": "channel/chispa_closed.png", "open": "channel/chispa_open.png" },
+      "avoid": ["scary imagery"] }
+    ```
+
+No persona or mascot is required; leave them out and Aurora narrates as a neutral host.
+
 ## Keys
 
 | Key | Meaning |
