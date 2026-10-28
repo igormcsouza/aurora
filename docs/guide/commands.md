@@ -1,6 +1,6 @@
 # Commands
 
-In Claude Code: `/aurora <command>`. In Codex: `$aurora <command>` or plain language. Aurora parses the request, so a slash is not required. No arguments or an unknown command prints this table.
+In Claude Code: `/aurora <command>`. In Codex: `$aurora <command>` or plain language. Aurora parses the request, so a slash is not required. No arguments prints this table; anything that is not a command is treated as a [free-text request](#ask).
 
 | Command | What it does |
 |---|---|
@@ -18,6 +18,19 @@ In Claude Code: `/aurora <command>`. In Codex: `$aurora <command>` or plain lang
 | `resume[=slug]` | List unfinished videos, or continue one from its first pending step. |
 | `selftest` | Prove the free/cheap tiers work on this machine. |
 | `help` | Print the command table and stop. |
+| *anything else* | Plain language: Aurora picks the right command (or helper) and runs it. See [Ask](#ask). |
+
+## Ask (free text) { #ask }
+
+Forgot a command, or want something Aurora was not built for? Just say it:
+
+```text
+/aurora open the draft for me please
+/aurora what is left on the sourdough video?
+/aurora how much did the last three videos cost?
+```
+
+Aurora maps the sentence to a command or helper, tells you in one line what she chose, runs it, and ends with the exact command so you learn the shortcut. If the target is ambiguous, or the action deletes, publishes or spends money, she proposes the command and asks first.
 
 ## Feedback { #feedback }
 
