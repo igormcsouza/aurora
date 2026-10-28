@@ -24,9 +24,24 @@ if [ ${#missing_apt[@]} -gt 0 ]; then
 fi
 
 mkdir -p draft_videos published_videos aurora
-if [ -d .git ] || git rev-parse --git-dir >/dev/null 2>&1; then
-  touch .gitignore; for l in "video-kit/.venv/" "video-kit/web/node_modules/" ".aurora_trash/"; do grep -qxF "$l" .gitignore || echo "$l" >> .gitignore; done
-  echo "note: big media (mp4, mp3, frames) in draft_videos/ and published_videos/ is not git-ignored; use Git LFS or ignore them if the repo should stay small"
+# --- git hygiene: keep big generated files (and optionally logs) out of version control
+LOGS=""; for a in "$@"; do case "$a" in --logs=keep|--logs=ignore) LOGS="${a#--logs=}";; esac; done
+[ -n "$LOGS" ] && echo "$LOGS" > aurora/git_logs
+[ -f aurora/git_logs ] && LOGS="$(cat aurora/git_logs)"
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  touch .gitignore
+  add() { grep -qxF "$1" .gitignore || echo "$1" >> .gitignore; }
+  for l in "video-kit/.venv/" "video-kit/web/node_modules/" ".aurora_trash/"; do add "$l"; done
+  for d in draft_videos published_videos; do
+    for e in mp4 mov webm mkv mp3 wav m4a blend blend1; do add "$d/**/*.$e"; done
+    for p in "partial_movie_files/" "media/" "*_frames/" "frames/" "renders/"; do add "$d/**/$p"; done
+  done
+  # logs: aurora/ itself is memory and stays versioned; only per-video and kit logs are optional
+  if [ "$LOGS" = ignore ]; then add "draft_videos/**/*.log"; add "published_videos/**/*.log"; add "video-kit/**/*.log"
+  elif [ "$LOGS" = keep ]; then sed -i -e '\#^draft_videos/\*\*/\*\.log$#d' -e '\#^published_videos/\*\*/\*\.log$#d' -e '\#^video-kit/\*\*/\*\.log$#d' .gitignore
+  else echo "ACTION: ask the user whether to version the logs (draft_videos/**/*.log); then rerun preflight.sh --logs=keep or --logs=ignore (remembered in aurora/git_logs)"; fi
+  tracked=$(git ls-files draft_videos published_videos | grep -E '\.(mp4|mov|webm|mkv|mp3|wav|m4a|blend)$' | wc -l)
+  [ "$tracked" -gt 0 ] && echo "note: $tracked big media files are already tracked by git; .gitignore does not untrack them. To untrack: git rm -r --cached --ignore-unmatch draft_videos published_videos && git add -A"
 fi
 mkdir -p "$KIT/music"
 if command -v uv >/dev/null 2>&1; then
@@ -51,7 +66,7 @@ fi
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SRC="$HERE/kit"
 command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1 || { echo "ACTION: ask the user to install Node.js 20+ (nvm or apt install nodejs npm); the web scene engine needs it"; exit 1; }
 mkdir -p "$KIT/web" "$KIT/blender/examples"
-if [ "${1:-}" = "--refresh" ] || [ ! -f "$KIT/KIT_VERSION" ]; then
+if [[ " $* " == *" --refresh "* ]] || [ ! -f "$KIT/KIT_VERSION" ]; then
   # first run or explicit refresh: overwrite the shared kit files (project files like common.py are never touched)
   cp -f "$SRC"/web/{engine.html,templates.js,capture.mjs,record.mjs,package.json} "$KIT/web/"
   cp -f "$SRC"/blender/lib.py "$KIT/blender/"; cp -f "$SRC"/blender/examples/*.py "$KIT/blender/examples/"; cp -f "$SRC"/polish.sh "$KIT/"; cp -f "$SRC"/VERSION "$KIT/KIT_VERSION"

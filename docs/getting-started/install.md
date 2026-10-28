@@ -45,12 +45,9 @@ In a new session, `/aurora help` prints the command table and runs nothing else.
 
 ## Per-project setup
 
-Nothing to install per project. From your channel project root, Aurora's **preflight** creates `./video-kit/` (render tooling) and `videos/` on first use and tells you about anything missing. Add this to the project's `.gitignore`:
+Nothing to install per project. From your channel project root, Aurora's **preflight** creates `./video-kit/` (render tooling), `draft_videos/` and `published_videos/` on first use and tells you about anything missing.
 
-```text
-video-kit/.venv/
-video-kit/web/node_modules/
-```
+In a git repo, preflight also keeps the repository small by adding to `.gitignore`: videos, audio, Blender files, render caches and frames under `draft_videos/` and `published_videos/`, plus `video-kit/.venv/` and `video-kit/web/node_modules/`. Plans, scripts, specs and `aurora/` memory stay versioned. It asks once whether to version logs too (`*.log`); your answer is stored in `aurora/git_logs`, and you can change it with `preflight.sh --logs=keep` or `--logs=ignore`.
 
 ## Codex { #codex }
 
