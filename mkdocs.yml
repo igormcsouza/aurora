@@ -81,6 +81,7 @@ nav:
   - Guide:
       - guide/index.md
       - Commands: guide/commands.md
+      - Examples: guide/examples.md
       - Preferences: guide/preferences.md
       - The pipeline: guide/pipeline.md
       - Render engines: guide/engines.md

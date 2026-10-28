@@ -20,6 +20,8 @@ In Claude Code: `/aurora <command>`. In Codex: `$aurora <command>` or plain lang
 | `help` | Print the command table and stop. |
 | *anything else* | Plain language: Aurora picks the right command (or helper) and runs it. See [Ask](#ask). |
 
+See [Examples](examples.md) for each command with the output to expect.
+
 ## Ask (free text) { #ask }
 
 Forgot a command, or want something Aurora was not built for? Just say it:

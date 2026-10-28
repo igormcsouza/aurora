@@ -1,6 +1,6 @@
 # Quickstart
 
-Run everything from your channel project root.
+Run everything from your channel project root. Every step has a worked example with the output to expect in [Examples](../guide/examples.md).
 
 ## 1. Tell Aurora about the channel
 
