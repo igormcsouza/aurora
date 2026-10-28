@@ -49,11 +49,10 @@ Full reference in the [docs](https://igormcsouza.github.io/aurora/guide/commands
 ## Install
 
 ```bash
-git clone https://github.com/igormcsouza/aurora.git ~/Projects/aurora
-cd ~/Projects/aurora && ./install.sh
+curl -fsSL https://raw.githubusercontent.com/igormcsouza/aurora/main/install.sh | bash
 ```
 
-`install.sh` symlinks the skill into `~/.claude/skills/` and the four agents into `~/.claude/agents/`. Start a new Claude Code session, `cd` into your channel project and run `/aurora interview`. You will need `ffmpeg`, Node.js 20+, Python 3 and an `ELEVENLABS_API_KEY`; Aurora's preflight checks everything and tells you exactly what is missing. See [Install](https://igormcsouza.github.io/aurora/getting-started/install/).
+The installer asks where to put Aurora: **Claude Code**, **Codex**, both, or **other** (you name the folders). Skip the question with `... | bash -s -- --target claude|codex|both|other`. It clones Aurora to `~/.aurora` and symlinks the skill and the four agents into your host's folders (`~/.claude/` for Claude Code, `~/.agents/` for Codex); run it again to update. Start a new Claude Code session, `cd` into your channel project and run `/aurora interview`. You will need `ffmpeg`, Node.js 20+, Python 3 and an `ELEVENLABS_API_KEY`; Aurora's preflight checks everything and tells you exactly what is missing. See [Install](https://igormcsouza.github.io/aurora/getting-started/install/).
 
 ## How it is built
 

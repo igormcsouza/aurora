@@ -20,20 +20,40 @@ export ELEVENLABS_API_KEY=...
 
 ## Install the skill
 
+One command:
+
 ```bash
-git clone https://github.com/igormcsouza/aurora.git ~/Projects/aurora
-cd ~/Projects/aurora
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/igormcsouza/aurora/main/install.sh | bash
 ```
 
-`install.sh` is idempotent and never overwrites a real file. It creates:
+The installer clones Aurora to `~/.aurora` (override with `AURORA_HOME`) and asks which host to set up:
 
-- `~/.claude/skills/aurora` pointing to `skills/aurora`
-- `~/.claude/agents/video-*.md` pointing to the four role agents
+| Choice | Skill goes to | Role agents go to |
+|---|---|---|
+| 1. Claude Code (default) | `~/.claude/skills/aurora` | `~/.claude/agents/` |
+| 2. Codex | `~/.agents/skills/aurora` | `~/.agents/agents/` |
+| 3. Both | both of the above | both of the above |
+| 4. Other | the folder you give | the folder you give (default: `agents` next to it) |
 
-A `SKIPPED` line means a real file already uses that name; move it away and rerun. Then **start a new Claude Code session**: skills and agents load at session start.
+Skip the question by passing the choice:
 
-Because the install is a symlink, `git pull` in the repo updates the live skill.
+```bash
+curl -fsSL https://raw.githubusercontent.com/igormcsouza/aurora/main/install.sh | bash -s -- --target codex
+curl -fsSL https://raw.githubusercontent.com/igormcsouza/aurora/main/install.sh | bash -s -- --target other --skills ~/.myhost/skills --agents ~/.myhost/agents
+```
+
+Expected output (one line per link; `ok` means it was already there):
+
+```text
+linked   /home/you/.claude/skills/aurora -> /home/you/.aurora/skills/aurora
+linked   /home/you/.claude/agents/video-animator.md -> /home/you/.aurora/agents/video-animator.md
+...
+Aurora is in /home/you/.aurora. Start a new session in your host so the skill loads, ...
+```
+
+The installer is idempotent and never overwrites a real file: a `SKIPPED` line means a real file already uses that name; move it away and rerun. Then **start a new session** in your host: skills and agents load at session start. Prefer a manual install? `git clone` the repo anywhere and run `./install.sh` from it.
+
+Because everything is symlinked, updating is rerunning the one-liner (it does a `git pull` in `~/.aurora`).
 
 ## Verify
 
@@ -51,12 +71,12 @@ In a git repo, preflight also keeps the repository small by adding to `.gitignor
 
 ## Codex { #codex }
 
-Aurora's workflow is host-neutral. In Codex, symlink the skill into `.agents/skills/aurora` of your project and use plain language or `$aurora <command>`. Role briefs in `agents/` are read directly and passed to native subagents.
+Aurora's workflow is host-neutral. `--target codex` links the skill into `~/.agents/skills/aurora` (for one project only, symlink it into that project's `.agents/skills/aurora` instead). Use plain language or `$aurora <command>`. Role briefs in `~/.agents/agents/` are read directly and passed to native subagents.
 
 ## Upgrading
 
 ```bash
-cd ~/Projects/aurora && git pull
+curl -fsSL https://raw.githubusercontent.com/igormcsouza/aurora/main/install.sh | bash -s -- --target claude
 ```
 
-In an existing project, `preflight.sh --refresh` re-copies the shared kit files (your project's own `common.py` is never overwritten).
+(or `git pull` in `~/.aurora`). In an existing project, `preflight.sh --refresh` re-copies the shared kit files (your project's own `common.py` is never overwritten).
