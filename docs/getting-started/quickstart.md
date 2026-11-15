@@ -48,11 +48,11 @@ Only the named scenes are redone. General notes ("voice too fast") are stored as
 
 ## 4. Final and package
 
-Once you approve, Aurora renders the final (no badge), mixes loudness, and builds `package/`: `video.mp4`, three thumbnails, `subtitles.srt` and `package.md` with titles, description, tags and pinned comment. The anti-slop gate runs first and a FAIL blocks packaging.
+Once you approve, Aurora renders the final (no badge), mixes loudness, and builds `package/`: `video.mp4`, the thumbnail you approved, `subtitles.srt` and `package.yml` with the chosen title, description, tags and pinned comment. At the draft review you already got 5 title options, each with its rendered thumbnail: you approve the draft, one title and its miniature together. The anti-slop gate runs first and a FAIL blocks packaging.
 
 ## 5. Upload, then publish
 
-Upload in YouTube Studio using `package.md`, then:
+Upload in YouTube Studio using `package.yml` (or ask Aurora to run `youtube.py upload`, which uploads it private), then:
 
 ```text
 /aurora publish <slug>

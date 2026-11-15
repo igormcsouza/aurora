@@ -31,7 +31,8 @@ LOGS=""; for a in "$@"; do case "$a" in --logs=keep|--logs=ignore) LOGS="${a#--l
 if git rev-parse --git-dir >/dev/null 2>&1; then
   touch .gitignore
   add() { grep -qxF "$1" .gitignore || echo "$1" >> .gitignore; }
-  for l in "video-kit/.venv/" "video-kit/web/node_modules/" ".aurora_trash/"; do add "$l"; done
+  # private: channel analytics pulled from the YouTube API, OAuth client/token files (those live in ~/.config/aurora, never in a project)
+  for l in "video-kit/.venv/" "video-kit/web/node_modules/" ".aurora_trash/" "aurora/analytics/" "client_secret*.json" "token*.json" "youtube_token.json"; do add "$l"; done
   for d in draft_videos published_videos; do
     for e in mp4 mov webm mkv mp3 wav m4a blend blend1; do add "$d/**/*.$e"; done
     for p in "partial_movie_files/" "media/" "*_frames/" "frames/" "renders/"; do add "$d/**/$p"; done

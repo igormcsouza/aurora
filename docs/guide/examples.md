@@ -61,8 +61,8 @@ scene 10: the joke is too slow, and scene 4 shows the wrong chart
 **Expected:** "Redoing scenes 4 and 10." Only those scenes are re-rendered; you get the draft path again. Say `approved` and the final render, loudness mix and `package/` follow:
 
 ```text
-package/video.mp4  thumbnail_a.png thumbnail_b.png thumbnail_c.png
-package/subtitles.srt  package/package.md
+package/video.mp4  package/thumbnail.png (the one you approved)
+package/subtitles.srt  package/package.yml
 ```
 
 ## Feedback that sticks

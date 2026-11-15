@@ -28,7 +28,7 @@ Most "AI video" tools are a pile of templates that stamp out the same video with
 | Visuals | Three engines picked per scene: **web** (HTML/GSAP via Playwright), **Blender** (3D hero moments) and **Manim** (code, charts, diagrams) |
 | Subtitles | `subtitles.srt` built from the alignment |
 | Thumbnails | Three variants (A/B/C) ready for YouTube's Test & compare |
-| `package.md` | 3 title options, description with chapters and sources, tags, pinned comment |
+| `package.yml` | 5 title options (each with its rendered thumbnail, approved at the draft review), description with chapters and sources, tags, pinned comment; read by the upload call |
 | Shorts | 2-4 vertical clips cut from the finished video (`/aurora shorts`) |
 
 ## Commands

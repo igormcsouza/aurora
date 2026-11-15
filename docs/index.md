@@ -6,7 +6,7 @@
 /aurora create "why sourdough starters fail"
 ```
 
-Aurora researches the idea, writes a fact-checked script in your narrator's voice, records the narration, animates every scene, and hands you a 10-minute 1080p video with subtitles, three thumbnails and a paste-ready YouTube description.
+Aurora researches the idea, writes a fact-checked script in your narrator's voice, records the narration, animates every scene, and hands you a 10-minute 1080p video with subtitles, five title options with a rendered thumbnail each, and a ready YouTube description.
 
 ## Why it is different
 
