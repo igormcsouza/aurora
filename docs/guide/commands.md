@@ -42,8 +42,20 @@ Each point becomes a line in `aurora/feedback.jsonl` with `source` (subscriber, 
 
 ## Analise { #analise }
 
-You deliver the analytics (a YouTube Studio CSV/ZIP, pasted numbers or screenshots); Aurora does not call the YouTube API. She matches rows to videos, compares metrics with what each video was (theme, hook, title style, template mix, humor density, thumbnail), maps retention drops to scenes, and writes `aurora/insights.md`: **what worked**, **what did not**, and at most 7 **rules for next videos**, each tagged `confirmed` or `hypothesis`. Confirmed rules are defaults; hypotheses are tie-breakers and deliberate experiments. Analytics never override your persona or your avoid-list.
+With a one-time `youtube.py auth` (see below) Aurora pulls the numbers herself through the YouTube Analytics API (totals, traffic sources, retention curve, biggest drops mapped to scenes). Impressions CTR is not in that API, and without a login you deliver the analytics instead (a YouTube Studio CSV/ZIP, pasted numbers or screenshots). She matches rows to videos, compares metrics with what each video was (theme, hook, title style, template mix, humor density, thumbnail), maps retention drops to scenes, and writes `aurora/insights.md`: **what worked**, **what did not**, and at most 7 **rules for next videos**, each tagged `confirmed` or `hypothesis`. Confirmed rules are defaults; hypotheses are tie-breakers and deliberate experiments. Analytics never override your persona or your avoid-list.
 
 ## Batch { #batch }
 
 Same pipeline as `create`, with your gates moved: the 7 themes (once), then each draft (any order, any time). Themes are asked to differ in angle, format and structure, not be seven variations of one idea. Drafts wait with a status (`draft-ready`, `approved`, `fixing`); `review` turns your answers into approvals, fixes and feedback entries.
+
+## YouTube API (optional) { #youtube-api }
+
+Put the Desktop OAuth client from Google Cloud at `~/.config/aurora/client_secret.json`, then:
+
+```bash
+python3 ~/.claude/skills/aurora/youtube.py auth                      # one-time browser login
+python3 ~/.claude/skills/aurora/youtube.py upload draft_videos/<slug>  # dry run; add --yes to upload
+python3 ~/.claude/skills/aurora/youtube.py pull                      # analytics for published videos
+```
+
+Uploads are always **private** (unaudited API projects are forced private by YouTube); you make the video public in Studio. While the consent screen is in Testing mode the token expires after 7 days: run `auth` again.

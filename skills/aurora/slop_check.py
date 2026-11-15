@@ -79,21 +79,19 @@ def main(slug):
     if not plan.get("aha"): add("FAIL", "plan.json has no 'aha' (the original insight of the video)")
     if not re.search(r"\b(minha opini|eu acho|na minha|o que importa|o que muda|faça|fa[cç]a|troque|use|evite|in my opinion|i think|what matters|what changes|try this|avoid|my take|en mi opini|lo que importa)\w*", narr, re.I): add("WARN", "no opinion or actionable takeaway wording found: is this just reading the news?")
     # 4 package metadata (YouTube limits: description 5000 chars/bytes, no < or > in title/description/tags)
-    pk = V / "package" / "package.md"
-    if pk.exists():
-        t = pk.read_text()
-        sec = lambda name: (re.search(rf"## {name}\s*\n(.+?)(?=\n## |\Z)", t, re.S) or [None, ""])[1]
-        d = sec("Description").strip()
-        tags = [x.strip() for x in re.split(r"[,\n]", sec("Tags")) if x.strip()]
-        titles = [re.sub(r"^\s*(\d+[.)]|[-*])\s*", "", l).strip() for l in sec("Titles").splitlines() if l.strip()]
-        if not d: add("FAIL", "package.md has no ## Description section")
+    import pkgmeta
+    try: pm = pkgmeta.load(V / "package")
+    except ValueError as e: pm = None; add("FAIL", str(e))
+    if pm:
+        d, tags, titles = pm["description"], pm["tags"], [x["text"] for x in pm["titles"]]
+        if not d: add("FAIL", "package.yml has no description (a `description: |` block)")
         nb = len(d.encode())
         if len(d) > 5000 or nb > 5000: add("FAIL", f"description is {len(d)} chars / {nb} bytes: YouTube limit is 5000")
         elif nb > 4500: add("WARN", f"description is {nb} bytes: close to the 5000 limit")
         else: add("PASS", f"description {len(d)} chars / {nb} bytes")
         for name, txt in (("description", d), ("titles", "\n".join(titles)), ("tags", ",".join(tags))):
             if re.search(r"[<>]", txt): add("FAIL", f"{name} contains < or > (YouTube rejects them; also no arrows like ->)")
-        if len(titles) != 3: add("WARN", f"{len(titles)} title options under '## Titles' (expected 3)")
+        if len(titles) != 5: add("WARN", f"{len(titles)} title options in package.yml (expected 5, each with its own thumbnail)")
         if any(len(x) > 100 for x in titles): add("FAIL", "a title is over 100 characters")
         if n := len(tags): 
             if n > 15: add("WARN", f"{n} tags: keep about 15 relevant ones, no keyword stuffing")
@@ -104,7 +102,7 @@ def main(slug):
             add("FAIL", "chapters invalid: need 3+ lines 'M:SS Title', first at 0:00, increasing, each at least 10s")
         if len(re.findall(r"#\w+", d)) > 15: add("FAIL", "more than 15 hashtags: YouTube ignores all of them")
         if not (re.search(r"(?i)divulga|voz sint|narra[cç][aã]o (gerada|sint)|intelig[eê]ncia artificial|synthetic|artificial intelligence|\\bAI\\b|voz sint[eé]tica|inteligencia artificial", d) or re.search(r"\bIA\b", d)): add("WARN", "no AI-use note in the description (see Anti-slop section: disclosure decision)")
-        if re.search(r"(?i)urgente|chocante|você não vai acreditar|apocalipse|shocking|you won.t believe|urgent|apocalypse|increíble|no vas a creer", t + d): add("WARN", "title/description has clickbait or fake-urgency words")
+        if re.search(r"(?i)urgente|chocante|você não vai acreditar|apocalipse|shocking|you won.t believe|urgent|apocalypse|increíble|no vas a creer", "\n".join(titles) + d): add("WARN", "title/description has clickbait or fake-urgency words")
         labels = (prefs_json(P).get("labels") or {})
         src_words = {labels.get("sources", "Sources"), "Sources", "Fontes", "Fuentes", "Quellen", "Sources"}
         if not any(w.lower() in d.lower() for w in src_words): add("FAIL", "description has no sources section (label from preferences.json labels.sources, default 'Sources')")
@@ -115,9 +113,13 @@ def main(slug):
             wh = struct.unpack(">II", b[16:24]) if b[:8] == b"\x89PNG\r\n\x1a\n" else (0, 0)
             if wh != (1280, 720): add("FAIL", f"{f.name} is {wh[0]}x{wh[1]}, expected 1280x720")
             if len(b) > 2 * 1024 * 1024: add("FAIL", f"{f.name} is over 2 MB (YouTube limit)")
-        if not (V / "package" / "thumbnail.png").exists(): add("FAIL", "package/thumbnail.png (variant A) missing")
-        elif len(th) < 2: add("WARN", "only one thumbnail: make thumbnail_b.png (and _c) with a different idea for YouTube's Test & compare; describe A/B/C under '## Thumbnail'")
-    else: add("WARN", "package/package.md not built yet")
+        for i, x in enumerate(pm["titles"], 1):
+            f = x.get("thumbnail")
+            if pm["chosen"] == 0 and not (f and (V / "package" / f).exists()): add("FAIL", f"title {i} has no rendered thumbnail ({f}): the user approves title + miniature together")
+        if pm["chosen"] == 0: add("WARN", "no title approved yet (chosen: 0): approve with pkgmeta.py choose <video_dir> N")
+        elif not (V / "package" / "thumbnail.png").exists(): add("FAIL", "title approved but package/thumbnail.png is missing")
+        elif not 1 <= pm["chosen"] <= len(titles): add("FAIL", f"chosen: {pm['chosen']} is not one of the {len(titles)} titles")
+    elif not (V / "package" / "package.yml").exists() and not (V / "package" / "package.md").exists(): add("WARN", "package/package.yml not built yet")
     for lvl, msg in out: print(f"{lvl:<5} {msg}")
     sys.exit(1 if any(l == "FAIL" for l, _ in out) else 0)
 

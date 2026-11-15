@@ -4,3 +4,7 @@ __pycache__/
 *.py[cod]
 node_modules/
 .tether/
+client_secret*.json
+token*.json
+token*.pickle
+youtube_token.json

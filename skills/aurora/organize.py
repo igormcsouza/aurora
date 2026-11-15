@@ -17,7 +17,7 @@ KEEP = ["package/*", "plan.json", "narration.md", "sources.md", "visual_assets.m
         "assets/*", "asr/*.json", "scenes/spec.json", "scenes/cues.json", "scenes/durations.json", "scenes/tts_overrides.json", "scenes/*.mp3", "scenes/*.wav",
         "scenes/*.py", "scenes/hero_*", "scenes/final/*", "shorts/*", "cost.json"]
 # what is not needed once the video is out
-TRASH_PAT = ["voice_samples/*", "*contact*", "*sheet*", "qa.md", "*.log", "media/*", "*/__pycache__/*", "*_frames/*", "tmp/*", "temp/*", "renders/*", "drafts/*", "*partial_movie_files*",
+TRASH_PAT = ["voice_samples/*", "thumbnails_unused/*", "*contact*", "*sheet*", "qa.md", "*.log", "media/*", "*/__pycache__/*", "*_frames/*", "tmp/*", "temp/*", "renders/*", "drafts/*", "*partial_movie_files*",
              "draft*.mp4", "*draft*.srt", "scenes/*.mp4", "scenes/*.mov", "*.tmp", "*.DS_Store", "test_*", "*_test*", "test/*", "tests/*"]
 STEPS = ["preflight", "topic", "plan", "script", "voice", "draft", "review", "final", "package"]
 
@@ -54,7 +54,7 @@ def infer_state(folder):
     f = Path(folder); sc = f / "scenes"; has = lambda *g: any(list(f.glob(x)) for x in g)
     done = {"preflight": has("plan.json", "narration.md"), "topic": has("plan.json", "narration.md"), "plan": (f / "plan.json").exists(), "script": (f / "narration.md").exists(),
             "voice": bool(list(sc.glob("*.mp3"))) and (sc / "cues.json").exists(), "draft": has("draft*.mp4", "scenes/*.mp4"), "review": has("scenes/final/*.mp4", "final*.mp4"),
-            "final": has("scenes/final/*.mp4", "final.mp4", "package/video.mp4"), "package": (f / "package" / "package.md").exists() and (f / "package" / "video.mp4").exists()}
+            "final": has("scenes/final/*.mp4", "final.mp4", "package/video.mp4"), "package": ((f / "package" / "package.yml").exists() or (f / "package" / "package.md").exists()) and (f / "package" / "video.mp4").exists()}
     t = time.strftime("%Y-%m-%dT%H:%M:%S")
     return {"slug": f.name, "topic": f.name.replace("-", " "), "minutes": 10, "velocity": "serial", "created": t, "updated": t,
             "steps": {k: ({"status": "done", "at": t, "note": "inferred from files by organize.py"} if done[k] else {"status": "pending"}) for k in STEPS}}
@@ -92,6 +92,7 @@ def scan(R, published):
         if not (d / "state.json").exists(): plan["infer_state"].append(dest)
         pk = d / "package" / "package.md"
         if pk.exists() and "## Description" not in pk.read_text(): plan["notes"].append(f"{rel}: package.md is in the old format (no '## Description'); re-run the producer's package step before publishing")
+        if pk.exists() and not (d / "package" / "package.yml").exists(): plan["notes"].append(f"{rel}: package.md is the legacy format; new videos use package.yml (still readable)")
     for name, dest in (("topics.log", "topics.log"), ("_research.md", "research.md"), ("_batch.md", "batch.md")):
         for base in ("videos", "video", DRAFT):
             p = R / base / name
@@ -167,8 +168,10 @@ def mark_published(R, dest, slug, date, url=""):
     """published.json, state.json stamp, jokes ledger and topics log (shared by `publish` and by `apply` for adopted videos)."""
     pj = dest / "published.json"
     kv = R / "video-kit" / "KIT_VERSION"
-    if not pj.exists(): pj.write_text(json.dumps({"slug": slug, "date": date, "url": url or "", "youtube_id": "", "kit_version": kv.read_text().strip() if kv.exists() else "",
-                                                  "note": "fill url/youtube_id after upload; analise uses them"}, indent=2))
+    new = {"slug": slug, "date": date, "url": url or "", "youtube_id": "", "kit_version": kv.read_text().strip() if kv.exists() else "",
+           "note": "fill url/youtube_id after upload; analise uses them"}
+    old = json.loads(pj.read_text()) if pj.exists() else {}  # youtube.py upload may have written youtube_id/url already: keep them
+    pj.write_text(json.dumps({**new, **{k: v for k, v in old.items() if v}, **({"url": url} if url else {})}, indent=2))
     sj = dest / "state.json"
     if sj.exists(): s = json.loads(sj.read_text()); s["published"] = date; sj.write_text(json.dumps(s, indent=2, ensure_ascii=False))
     (R / AUR).mkdir(exist_ok=True)
@@ -184,7 +187,7 @@ def publish(R, slug, date, url, yes):
     src = R / DRAFT / slug
     if not src.is_dir(): sys.exit(f"{src} not found")
     pk = src / "package"
-    miss = [x for x in ("video.mp4", "thumbnail.png", "subtitles.srt", "package.md") if not (pk / x).exists()]
+    miss = [x for x in ("video.mp4", "thumbnail.png", "subtitles.srt") if not (pk / x).exists()] + ([] if (pk / "package.yml").exists() or (pk / "package.md").exists() else ["package.yml"])
     if miss: sys.exit(f"package/ is missing {miss}: finish the package step first")
     date = date or time.strftime("%Y-%m-%d"); dest = R / PUB / f"{date}_{slug}"
     keep, trash, review = classify(src)

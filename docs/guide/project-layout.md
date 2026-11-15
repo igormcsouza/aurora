@@ -7,7 +7,7 @@ Aurora keeps a channel project in a fixed shape.
   preferences.json            persona, voice, palette, tone, defaults
   draft_videos/<slug>/        videos in production: everything, incl. drafts, voice tests, logs, caches
   published_videos/<date>_<slug>/
-                              package/ (video.mp4, thumbnails, subtitles.srt, package.md), shorts/,
+                              package/ (video.mp4, thumbnail.png, subtitles.srt, package.yml), shorts/,
                               cost.json, published.json, and what rebuilds the video
                               (plan.json, narration.md, sources.md, scenes/ ...)
   aurora/                     feedback.jsonl, insights.md, topics.log, jokes.jsonl, ideas.jsonl,
