@@ -56,6 +56,7 @@ Put the Desktop OAuth client from Google Cloud at `~/.config/aurora/client_secre
 python3 ~/.claude/skills/aurora/youtube.py auth                      # one-time browser login
 python3 ~/.claude/skills/aurora/youtube.py upload draft_videos/<slug>  # dry run; add --yes to upload
 python3 ~/.claude/skills/aurora/youtube.py pull                      # analytics for published videos
+python3 ~/.claude/skills/aurora/youtube.py cards draft_videos/<slug>   # earlier videos cited in this one, with M:SS, for YouTube cards (also printed after upload)
 ```
 
 Uploads are always **private** (unaudited API projects are forced private by YouTube); you make the video public in Studio. While the consent screen is in Testing mode the token expires after 7 days: run `auth` again.
