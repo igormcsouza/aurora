@@ -3,6 +3,7 @@
   youtube.py auth                        one-time browser login; prints the channel it got access to
   youtube.py upload <video_dir> [--title N] [--category 22] [--synthetic yes|no] [--yes]
                                          upload package/ as PRIVATE (dry run without --yes), set thumbnail, fill published.json
+  youtube.py cards <video_dir>           previous videos cited in this one: title, URL, M:SS start-end (for YouTube cards); also printed after every upload
   youtube.py pull                        analytics for every published video with a youtube_id -> aurora/analytics/<date>.json
   youtube.py selftest                    offline checks
 Files: ~/.config/aurora/client_secret.json (Desktop OAuth client, from Google Cloud) and youtube_token.json (written by `auth`, mode 600).
@@ -150,7 +151,49 @@ def cmd_upload(args):
     if thumb.exists():
         try: api("POST", f"https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId={vid}", raw=thumb.read_bytes(), ctype="image/png"); print("Thumbnail set.")
         except RuntimeError as e: print("Thumbnail NOT set (custom thumbnails need a phone-verified channel):", e)
+    print_cards(v)
     print("Next: set visibility in Studio, paste package/subtitles.srt, then `/aurora publish <slug>`.")
+
+# ---------- cited videos (for cards) ----------
+norm = lambda s: re.sub(r"\s+", " ", re.sub(r"[^\w ]", " ", s.casefold())).strip()
+mmss = lambda t: f"{int(t) // 60}:{int(t) % 60:02d}"
+
+def mentions(v, root=None):
+    """Published videos cited in the narration of video dir `v`, with start/end seconds in the final cut (cumulative scene starts + cue times).
+    Matches the exact title (or its part before ':' / '?') inside each scene's cues; plan.json related_videos not found that way fall back to their whole scene."""
+    v = Path(v); root = Path(root) if root else find_project(v)
+    cues, durs = (json.loads((v / "scenes" / f).read_text()) if (v / "scenes" / f).exists() else None for f in ("cues.json", "durations.json"))
+    if not cues or not durs: return []
+    start = {str(s): (a, b) for s, a, b in scene_bounds(durs)}; found, seen = [], set()
+    pubs = []
+    for pj in sorted((root / "published_videos").glob("*/published.json")):
+        m = json.loads(pj.read_text()); slug = m.get("slug") or pj.parent.name.partition("_")[2]
+        if slug == v.name or pj.parent.name == v.name: continue
+        plan = pj.parent / "plan.json"; title = m.get("title") or (json.loads(plan.read_text()).get("title") if plan.exists() else None) or slug
+        pubs.append({"slug": slug, "title": title, "url": m.get("url") or (f"https://youtu.be/{m['youtube_id']}" if m.get("youtube_id") else "")})
+    for sid, cl in cues.items():
+        if str(sid) not in start: continue
+        text, idx = "", []
+        for i, c in enumerate(cl): nt = norm(c["text"]) + " "; text += nt; idx += [i] * len(nt)
+        for p in pubs:
+            head = re.split(r"[:?]", p["title"])[0]
+            for needle in dict.fromkeys(n for n in (norm(p["title"]), norm(head)) if len(n) >= 10):
+                hits = [m.start() for m in re.finditer(re.escape(needle), text)]
+                for h in hits:
+                    a, b = cl[idx[h]], cl[idx[min(h + len(needle) - 1, len(idx) - 1)]]
+                    found.append({**p, "start": start[str(sid)][0] + a["start"], "end": start[str(sid)][0] + b["end"], "scene": str(sid), "exact": True}); seen.add((p["slug"], str(sid)))
+                if hits: break
+    plan = v / "plan.json"
+    for r in (json.loads(plan.read_text()).get("related_videos") or []) if plan.exists() else []:
+        p = next((x for x in pubs if x["slug"] == r.get("slug")), None)
+        if p and (p["slug"], str(r.get("scene"))) not in seen and str(r.get("scene")) in start:
+            found.append({**p, "start": start[str(r["scene"])][0], "end": start[str(r["scene"])][1], "scene": str(r["scene"]), "exact": False})
+    return sorted(found, key=lambda x: x["start"])
+
+def print_cards(v):
+    ms = mentions(v)
+    print("\nPrevious videos cited here (for cards):" if ms else "\nPrevious videos cited here: none found")
+    for m in ms: print(f"  {mmss(m['start'])}-{mmss(m['end'] + 0.99)}  {m['title']}\n      {m['url'] or 'NO URL (published.json has no youtube_id)'}  (scene {m['scene']}{'' if m['exact'] else ', whole scene: title not spoken verbatim'})")
 
 # ---------- analytics ----------
 def scene_bounds(durs):
@@ -196,6 +239,16 @@ def cmd_pull():
 # ---------- selftest ----------
 def selftest():
     pkgmeta.selftest()
+    import tempfile
+    with tempfile.TemporaryDirectory() as t:
+        t = Path(t); (t / "draft_videos" / "new" / "scenes").mkdir(parents=True); p = t / "published_videos" / "2026-01-01_old"; p.mkdir(parents=True)
+        (p / "published.json").write_text(json.dumps({"slug": "old", "title": "Old Video: the sequel", "youtube_id": "abc"}))
+        n = t / "draft_videos" / "new"; (n / "scenes" / "durations.json").write_text(json.dumps({"01": 10, "02": 20}))
+        (n / "scenes" / "cues.json").write_text(json.dumps({"01": [{"start": 0, "end": 4, "text": "Hello."}], "02": [{"start": 0, "end": 5, "text": "x"}, {"start": 5, "end": 9.5, "text": 'No video "Old Video: the sequel" eu falei disso.'}]}))
+        ms = mentions(n); assert len(ms) == 1 and ms[0]["start"] == 15 and ms[0]["end"] == 19.5 and ms[0]["url"] == "https://youtu.be/abc" and ms[0]["exact"], ms
+        (n / "plan.json").write_text(json.dumps({"related_videos": [{"slug": "old", "scene": "01"}]}))
+        ms = mentions(n); assert [(m["scene"], m["exact"]) for m in ms] == [("01", False), ("02", True)], ms
+    assert mmss(75) == "1:15"
     b = scene_bounds({"01": 10, "02": 20}); assert b == [("01", 0, 10.0), ("02", 10.0, 30.0)], b
     assert scene_bounds([5, 5]) == [(1, 0, 5.0), (2, 5.0, 10.0)] and scene_bounds([{"id": "a", "duration": 4}])[0] == ("a", 0, 4.0)
     dr = drops([(0, 1.0), (0.25, 0.9), (0.5, 0.4), (1.0, 0.3)], 30, b); assert dr[0] == {"t": 15.0, "drop": 0.5, "scene": "02"}, dr
@@ -205,4 +258,4 @@ def selftest():
 
 if __name__ == "__main__":
     a = sys.argv[1:]
-    {"auth": lambda: cmd_auth(), "upload": lambda: cmd_upload(a[1:]), "pull": lambda: cmd_pull(), "selftest": selftest}.get(a[0] if a else "", lambda: print(__doc__))()
+    {"auth": lambda: cmd_auth(), "upload": lambda: cmd_upload(a[1:]), "pull": lambda: cmd_pull(), "cards": lambda: print_cards(Path(a[1]).resolve()), "selftest": selftest}.get(a[0] if a else "", lambda: print(__doc__))()
