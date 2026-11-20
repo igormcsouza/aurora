@@ -6,6 +6,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--c1,#1b1464
 .grid{position:absolute;inset:-200px;background-image:linear-gradient(rgba(255,255,255,.07) 2px,transparent 2px),linear-gradient(90deg,rgba(255,255,255,.07) 2px,transparent 2px);background-size:90px 90px}
 .grain{position:absolute;inset:0;opacity:.07;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:6px 6px;mix-blend-mode:overlay}
 .vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(10,5,40,.55) 100%);pointer-events:none;z-index:50}
+#bg,#cam{position:absolute;inset:0;transform-style:preserve-3d}
 #world{position:absolute;inset:0;transform-style:preserve-3d}
 .abs{position:absolute}
 .word{display:inline-block;font-weight:900;font-size:150px;line-height:1.05;letter-spacing:-3px;text-shadow:0 10px 0 rgba(0,0,0,.25);will-change:transform}
@@ -29,13 +30,14 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--c1,#1b1464
 .mascot{position:absolute;z-index:60}
 </style></head><body>
 <div id="stage">
- <div class="abs blob" id="b1" style="width:700px;height:700px;background:var(--a1);left:-100px;top:-120px"></div>
+ <div id="bg"><div class="abs blob" id="b1" style="width:700px;height:700px;background:var(--a1);left:-100px;top:-120px"></div>
  <div class="abs blob" id="b2" style="width:800px;height:800px;background:var(--a2);right:-200px;top:200px"></div>
  <div class="abs blob" id="b3" style="width:600px;height:600px;background:var(--a3);left:600px;bottom:-250px"></div>
- <div class="grid" id="grid"></div><div class="grain"></div>
- <div id="world"></div><div class="vig"></div>
+ <div class="grid" id="grid"></div></div><div class="grain"></div>
+ <div id="cam"><div id="world"></div></div><div class="vig"></div>
 </div>
 <script src="node_modules/gsap/dist/gsap.min.js"></script>
+<script src="motion.js"></script>
 <script src="templates.js"></script>
 <script>
 // Contract: capture.mjs injects window.__SPEC__ = {template, duration, props, beats, theme, speech, mascot, base}.
@@ -54,7 +56,12 @@ const tl = gsap.timeline({ paused: true });
 tl.to('#b1', { x: 700, y: 300, duration: Math.max(D, 30), ease: 'none' }, 0).to('#b2', { x: -800, y: -200, duration: Math.max(D, 30), ease: 'none' }, 0)
   .to('#b3', { x: 500, y: -200, duration: Math.max(D, 30), ease: 'none' }, 0).to('#grid', { x: 90, y: 90, duration: 3, ease: 'none', repeat: Math.ceil(D / 3) }, 0);
 const tpl = AURORA_TEMPLATES[SPEC.template]; if (!tpl) throw new Error('unknown template ' + SPEC.template);
-let renderT = tpl({ tl, el, W, D, P: SPEC.props || {}, beats: SPEC.beats || [], U, ACC: TH.accents, TH, gsap }) || (() => {});
+// word clock (SPEC.words = [{w,s,e}] in scene seconds) and camera rig (SPEC.camera: undefined = auto, false = still, [{t,x,y,s,r}] = explicit)
+const clock = MOTION.clock(SPEC.words, D), beats = SPEC.beats || [];
+let renderT = tpl({ tl, el, W, D, P: SPEC.props || {}, beats, U, ACC: TH.accents, TH, gsap, clock, M: MOTION }) || (() => {});
+const camFn = MOTION.camera(SPEC.camera === undefined && tpl.camera === false ? false : SPEC.camera, D, beats), camEl = document.getElementById('cam'), bgEl = document.getElementById('bg');
+const applyCam = t => { const c = camFn(t); camEl.style.transform = `rotate(${c.r}deg) scale(${c.s}) translate(${-c.x}px,${-c.y}px)`; bgEl.style.transform = `translate(${-c.x * .3}px,${-c.y * .3}px) scale(${1 + (c.s - 1) * .4})`; };
+window.camSpeeds = fps => Array.from({ length: Math.round(D * fps) }, (_, i) => MOTION.speed(camFn, i / fps, fps));
 // optional mascot: two PNGs (closed/open mouth); mouth flaps inside `speech` windows ([[start,end],...] in scene seconds)
 let mouth = () => {};
 if (SPEC.mascot) {
@@ -63,7 +70,7 @@ if (SPEC.mascot) {
   mouth = t => { const talking = (SPEC.speech || []).some(([a, b]) => t >= a && t <= b); document.getElementById('mo').style.opacity = talking && Math.floor(t * 8) % 2 === 0 ? 1 : 0; };
 }
 window.DUR = D;
-window.seek = t => { tl.seek(t, false); renderT(t); mouth(t); };
+window.seek = t => { tl.seek(t, false); renderT(t); mouth(t); applyCam(t); };
 window.settle = () => Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })).concat(document.fonts.ready));
 window.seek(0);
 </script></body></html>

@@ -90,3 +90,37 @@ AURORA_TEMPLATES.stat_reveal = ({ tl, el, D, P, beats, ACC, TH }) => {
   tl.fromTo('#world', { scale: .94 }, { scale: 1.04, duration: D, ease: 'sine.inOut' }, 0);
   return t => { const u = clamp((t - t0) / 1.6, 0, 1), v = (P.value || 0) * (1 - Math.pow(1 - u, 3)); num.textContent = t < t0 ? '' : (Number.isInteger(P.value) ? Math.round(v) : v.toFixed(1)) + (P.unit || ''); };
 };
+
+AURORA_TEMPLATES.screenshot_zoom.camera = false; // it runs its own camera on the browser card
+
+// ---- kinetic_words: key sentences whose words land ON the spoken word (use for claims, definitions, the punchline: a few per scene, not the whole narration).
+// P {groups:[{text, emphasis?:[word|index], kind?:'rise'|'pop'|'squash'|'blade', at?:seconds, color?}], size?, hold?}
+// A group starts at g.at, else beats[i], else where its words are found in the narration clock; each word then enters 2 frames before it is spoken.
+// Without a clock it falls back to evenly spread beats, so the scene still plays.
+AURORA_TEMPLATES.kinetic_words = ({ tl, el, D, P, beats, ACC, TH, clock, M }) => {
+  const gs = (P.groups || []).map(g => typeof g === 'string' ? { text: g } : g), n = gs.length, LEAD = 2 / 30;
+  let prev = 0; const plan = gs.map((g, gi) => {
+    const tokens = g.text.split(/\s+/).filter(Boolean);
+    let t0 = g.at ?? beats[gi] ?? (clock.has ? (clock.find(tokens.slice(0, 3).join(' '), prev)?.s ?? prev + 0.3) : 0.4 + gi * (D - 1.2) / Math.max(n, 1));
+    const times = clock.has ? clock.align(tokens, t0) : tokens.map((_, k) => t0 + k * 0.28);
+    prev = times[times.length - 1] + 0.1; return { g, tokens, times, t0 };
+  });
+  plan.forEach(({ g, tokens, times }, gi) => {
+    const chars = g.text.length, size = P.size || Math.round(Math.min(160, 1250 / Math.sqrt(chars))), emph = new Set((g.emphasis || []).map(e => typeof e === 'number' ? e : tokens.findIndex(t => M.norm(t) === M.norm(e))));
+    const box = el(`<div class="abs" style="left:210px;right:210px;top:0;bottom:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:.04em .26em;font-size:${size}px;line-height:1.12;text-align:center"></div>`);
+    const kind = g.kind || ['rise', 'pop', 'squash', 'blade'][gi % 4], ink = g.color || TH.ink;
+    tokens.forEach((tok, k) => {
+      const E = emph.has(k), small = !E && M.norm(tok).length <= 3, t = Math.max(0, times[k] - LEAD), rot = (M.rand(gi * 31 + k) - .5) * 10;
+      const w = el(`<span style="display:inline-block;position:relative;overflow:${kind === 'rise' && !E ? 'hidden' : 'visible'};padding:.06em ${E ? ".1em" : ".02em"};font-weight:${E ? 900 : small ? 600 : 800};font-style:${small ? 'italic' : 'normal'};font-size:${E ? 1.22 : small ? .8 : 1}em;color:${E ? (g.color || ACC[2]) : ink};opacity:${small ? .82 : 1};text-shadow:0 .07em 0 rgba(0,0,0,.25);letter-spacing:-.02em"><span class="in" style="display:inline-block">${E && tok.length <= 11 ? [...tok].map(c => `<span class="ch" style="display:inline-block">${c}</span>`).join('') : tok}</span></span>`, box), inn = w.firstElementChild;
+      const kk = E ? (tok.length <= 11 ? 'letters' : 'pop') : kind;
+      if (kk === 'letters') { const L = inn.querySelectorAll('.ch'); tl.fromTo(L, { y: -90, scale: .3, rotation: i => (i % 2 ? 14 : -14), opacity: 0 }, { y: 0, scale: 1, rotation: 0, opacity: 1, duration: M.pop.dur, ease: M.pop.ease, stagger: .035 }, t); }
+      else if (kk === 'rise') tl.fromTo(inn, { yPercent: 115, opacity: 0 }, { yPercent: 0, opacity: 1, duration: M.smooth.dur, ease: M.smooth.ease }, t);
+      else if (kk === 'squash') tl.fromTo(inn, { scaleX: 1.6, scaleY: .25, y: 40, opacity: 0 }, { scaleX: 1, scaleY: 1, y: 0, opacity: 1, duration: M.pop.dur, ease: M.pop.ease, transformOrigin: '50% 100%' }, t);
+      else if (kk === 'blade') tl.fromTo(inn, { x: -260, skewX: -28, opacity: 0 }, { x: 0, skewX: 0, opacity: 1, duration: M.smooth.dur, ease: M.smooth.ease }, t);
+      else tl.fromTo(inn, { scale: .2, rotation: rot * 2, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: M.pop.dur, ease: M.pop.ease }, t);
+      if (E) { const u = el(`<i style="position:absolute;left:0;right:0;bottom:-.02em;height:.1em;border-radius:99px;background:${ACC[1]};transform-origin:0 50%"></i>`, w); tl.fromTo(u, { scaleX: 0 }, { scaleX: 1, duration: .35, ease: 'power3.out' }, t + .22); }
+    });
+    const nextT = plan[gi + 1] ? plan[gi + 1].times[0] - LEAD - 0.35 : D - 0.4, exit = Math.min(nextT, times[times.length - 1] + (P.hold ?? 1.8));
+    tl.to(box, { y: -70, opacity: 0, duration: .3, ease: 'power2.in' }, Math.max(exit, times[times.length - 1] + 0.5));
+  });
+};

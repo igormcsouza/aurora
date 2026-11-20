@@ -13,12 +13,20 @@ Three engines, chosen **per scene** (`engine` in `plan.json`). Preflight sets th
 | The scene needs to show | Use |
 |---|---|
 | A hook, claim, number or title card | web `kinetic_title` / `stat_reveal` |
+| A sentence whose words should land on the spoken word (a claim, a definition, the punchline) | web `kinetic_words` |
 | Something real: docs, repo, UI, dashboard | web `screenshot_zoom` (screenshot) or `record.mjs` (screen recording) |
 | A process or build-up | web `layer_stack`, or Blender when depth sells it |
 | The one memorable moment | Blender hero |
 | Code, a diff, a terminal, a chart | Manim |
 
 Target mix per 10-minute video: web 50-60% of runtime, Blender 10-20%, Manim 20-30%. Never more than two consecutive scenes with the same engine and template, and no static frame longer than about 2 seconds. When no template fits, add one to the kit instead of forcing it.
+
+## Word clock, camera and motion
+
+- **Word clock.** `python3 ~/.claude/skills/aurora/kit/words.py <video_dir>` turns the per-scene ElevenLabs alignment into `scenes/words.json`; `capture.mjs` hands it to every template. `kinetic_words` uses it so each word enters two frames before it is spoken. In a 10-minute video it is for the 2-4 moments per scene that deserve typography, not for the whole narration.
+- **Camera.** Every web scene has one: a slow drift plus a quick push on each beat. Override with `camera: [{t,x,y,s,r}]` or turn it off with `camera: false`.
+- **Motion blur.** Frames where the camera moves fast are shot as four sub-frames and averaged. Still frames cost nothing extra.
+- **Motion presets** (`M.pop`, `M.smooth`, `M.soft` springs, `M.stagger`, `M.rand`) live in `kit/web/motion.js` for new templates.
 
 ## Speed
 
