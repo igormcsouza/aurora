@@ -55,6 +55,9 @@ const tl = gsap.timeline({ paused: true });
 // living background for the whole clip: drifting blobs + scrolling grid
 tl.to('#b1', { x: 700, y: 300, duration: Math.max(D, 30), ease: 'none' }, 0).to('#b2', { x: -800, y: -200, duration: Math.max(D, 30), ease: 'none' }, 0)
   .to('#b3', { x: 500, y: -200, duration: Math.max(D, 30), ease: 'none' }, 0).to('#grid', { x: 90, y: 90, duration: 3, ease: 'none', repeat: Math.ceil(D / 3) }, 0);
+// per-video scene: spec.custom = 'custom_03.js' (next to the spec) registers AURORA_TEMPLATES[name] with the same signature as a built-in template
+if (SPEC.custom) document.write('<script src="' + U(SPEC.custom) + '"><\/script>');
+</script><script>
 const tpl = AURORA_TEMPLATES[SPEC.template]; if (!tpl) throw new Error('unknown template ' + SPEC.template);
 // word clock (SPEC.words = [{w,s,e}] in scene seconds) and camera rig (SPEC.camera: undefined = auto, false = still, [{t,x,y,s,r}] = explicit)
 const clock = MOTION.clock(SPEC.words, D), beats = SPEC.beats || [];

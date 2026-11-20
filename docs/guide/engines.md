@@ -14,6 +14,8 @@ Three engines, chosen **per scene** (`engine` in `plan.json`). Preflight sets th
 |---|---|
 | A hook, claim, number or title card | web `kinetic_title` / `stat_reveal` |
 | A sentence whose words should land on the spoken word (a claim, a definition, the punchline) | web `kinetic_words` |
+| A diagram or "how it works" drawn live | web `draw_on` |
+| A command, build or tool session | web `fake_ui` |
 | Something real: docs, repo, UI, dashboard | web `screenshot_zoom` (screenshot) or `record.mjs` (screen recording) |
 | A process or build-up | web `layer_stack`, or Blender when depth sells it |
 | The one memorable moment | Blender hero |
