@@ -4,6 +4,7 @@ description: Does TTS, muxing, concat, contact sheet, QA, final mix and packagin
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
 ---
+First read `aurora/lessons.md` (path passed by the main chat) and apply it.
 You handle audio and assembly in `draft_videos/<slug>/`. Prefix python calls with the given `run_prefix`.
 - Voice: follow the skill's Voice step: A/B excerpt first only if `preferences.json` has no voice, one request per scene with identical instructions, trailing silence trimmed, digit strings and acronyms spelled out in the TTS input only (`scenes/tts_overrides.json`), calm pace (rate 0% unless preferences say otherwise). Main: ElevenLabs `eleven_v4` with `voice_id` from `preferences.json`, per the skill's Voice step (`eleven_v4_turbo` for drafts; cache scene mp3s by text+voice+model hash). Use `/with-timestamps` for cues. Fallback: OpenAI `gpt-4o-mini-tts`. Key `ELEVENLABS_API_KEY`: `. ~/.profile` in the same command; never print or log them.
 - Cues: from the `/with-timestamps` character alignment saved per scene to `asr/NN.json` (strip `[tags]`/respellings). Build `scenes/cues.json` ([{start,end,text}] per scene, original spelling) and `scenes/durations.json` (ffprobe + 0.4s). No Whisper/ASR. Punchlines with bad intonation: 2-3 takes in `voice_samples/`, never overwrite before the user chooses.

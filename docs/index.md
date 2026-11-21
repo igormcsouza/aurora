@@ -1,6 +1,6 @@
 # Aurora
 
-**Aurora** is a content-creator assistant for a YouTube channel, written in plain English. It is a [Claude Code](https://claude.com/claude-code) skill and four role agents: no app to host, no framework to learn. You describe your channel once, then ask for videos.
+**Aurora** is a content-creator assistant for a YouTube channel, written in plain English. It is a [Claude Code](https://claude.com/claude-code) skill and five role agents: no app to host, no framework to learn. You describe your channel once, then ask for videos.
 
 ```text
 /aurora create "why sourdough starters fail"

@@ -16,11 +16,12 @@ flowchart LR
 | 1 Theme | `video-researcher` | 3 ranked options; Aurora picks one |
 | 2 Plan | `video-scriptwriter` | `plan.json` with scenes, `claims`, `sources.md` |
 | 3 Script | `video-scriptwriter` | `narration.md` in the persona's voice (about 1500 words) |
+| 3b Critic | `video-critic` | `critic.md`: scored hook/clarity/pacing/claims/voice, fix list, at most 2 rounds before voice is paid for |
 | 4 Voice | `video-producer` | `scenes/NN.mp3`, `cues.json` (word timing), `durations.json` |
 | 5 Draft | `video-animator` + `video-producer` | low-quality draft, scene badges, contact sheet, `qa.md` |
 | 6 Review | **you** | scene-numbered feedback |
 | 7 Final | `video-animator` + `video-producer` | 1080p, CRF 17, about -16 LUFS |
-| 8 Package | `video-producer` | `package/` + anti-slop gate |
+| 8 Package | `video-producer` + `video-critic` | `package/` + anti-slop gate, titles and thumbnails scored |
 
 ## Facts
 

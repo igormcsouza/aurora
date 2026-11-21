@@ -1,6 +1,6 @@
 # Aurora
 
-**A YouTube content-creator assistant written in plain English.** No framework, no app, no server: Aurora is a [Claude Code](https://claude.com/claude-code) skill plus four role agents. You type `/aurora create "your idea"` and get back a finished 10-minute video with voice, animation, subtitles, three thumbnails and a paste-ready YouTube description.
+**A YouTube content-creator assistant written in plain English.** No framework, no app, no server: Aurora is a [Claude Code](https://claude.com/claude-code) skill plus five role agents. You type `/aurora create "your idea"` and get back a finished 10-minute video with voice, animation, subtitles, three thumbnails and a paste-ready YouTube description.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-7c3aed.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/Docs-igormcsouza.github.io%2Faurora-7c3aed)](https://igormcsouza.github.io/aurora/)
@@ -52,14 +52,14 @@ Full reference in the [docs](https://igormcsouza.github.io/aurora/guide/commands
 curl -fsSL https://raw.githubusercontent.com/igormcsouza/aurora/main/install.sh | bash
 ```
 
-The installer asks where to put Aurora: **Claude Code**, **Codex**, both, or **other** (you name the folders). Skip the question with `... | bash -s -- --target claude|codex|both|other`. It clones Aurora to `~/.aurora` and symlinks the skill and the four agents into your host's folders (`~/.claude/` for Claude Code, `~/.agents/` for Codex); run it again to update. Start a new Claude Code session, `cd` into your channel project and run `/aurora interview`. You will need `ffmpeg`, Node.js 20+, Python 3 and an `ELEVENLABS_API_KEY`; Aurora's preflight checks everything and tells you exactly what is missing. See [Install](https://igormcsouza.github.io/aurora/getting-started/install/).
+The installer asks where to put Aurora: **Claude Code**, **Codex**, both, or **other** (you name the folders). Skip the question with `... | bash -s -- --target claude|codex|both|other`. It clones Aurora to `~/.aurora` and symlinks the skill and the five agents into your host's folders (`~/.claude/` for Claude Code, `~/.agents/` for Codex); run it again to update. Start a new Claude Code session, `cd` into your channel project and run `/aurora interview`. You will need `ffmpeg`, Node.js 20+, Python 3 and an `ELEVENLABS_API_KEY`; Aurora's preflight checks everything and tells you exactly what is missing. See [Install](https://igormcsouza.github.io/aurora/getting-started/install/).
 
 ## How it is built
 
 ```text
 skills/aurora/      SKILL.md (the program), state.py, tiers.py, organize.py, slop_check.py,
                     preflight.sh, kit/ (web, Blender and Manim render helpers)
-agents/             video-researcher, video-scriptwriter, video-animator, video-producer
+agents/             video-researcher, video-scriptwriter, video-animator, video-producer, video-critic
 docs/               the mkdocs site
 ```
 

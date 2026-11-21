@@ -17,6 +17,8 @@ Aurora keeps a channel project in a fixed shape.
   .aurora_trash/              reversible trash, emptied only on your OK
 ```
 
+`aurora/lessons.md` is the channel's short list of hard-won rules; every agent reads it first, `feedback` and `analise` add to it.
+
 `organize.py` does all moving and deleting. Never move video files by hand. Commit `aurora/feedback.jsonl` and `aurora/insights.md` if your team shares them.
 
 ## Adopting an existing project
