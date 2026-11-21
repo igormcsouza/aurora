@@ -65,4 +65,4 @@ def main(a):
         sys.exit(1 if bad else 0)
     else: print(__doc__)
 
-main(sys.argv[1:])
+if __name__ == "__main__": main(sys.argv[1:])
