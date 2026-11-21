@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Word-level timings for the web engine (stdlib only).
-  words.py <video_dir>     reads <video_dir>/asr/NN.json (ElevenLabs /with-timestamps character alignment, saved per scene)
+  words.py <video_dir>     (own voice: asr/NN.json may instead hold {"words":[{word,start,end}]} from an ASR of the recording)
+                           reads <video_dir>/asr/NN.json (ElevenLabs /with-timestamps character alignment, saved per scene)
                            and writes <video_dir>/scenes/words.json: {"<scene id>": [{"w": word, "s": start_s, "e": end_s}, ...]}
 capture.mjs picks it up by spec.id; templates query it through the word clock (kinetic_words, anything that wants `clock.at(...)`).
 Words are the TTS text: [tags] are dropped; tts_overrides respellings stay as spoken (the clock matches loosely and falls back to even spacing).
@@ -25,10 +26,15 @@ def words(al):
     flush()
     return out
 
+def own(ws):
+    """Word list from an ASR of the user's own recording (whisper-style: [{word|w, start|s, end|e}])."""
+    g = lambda x, *k: next(x[i] for i in k if i in x)
+    return [{"w": g(x, "word", "w").strip(), "s": round(g(x, "start", "s"), 3), "e": round(g(x, "end", "e"), 3)} for x in ws if g(x, "word", "w").strip()]
+
 def main(d):
     d = Path(d); res = {}
     for f in sorted((d / "asr").glob("*.json")):
-        j = json.loads(f.read_text()); w = words(j.get("alignment") or j.get("normalized_alignment") or j)
+        j = json.loads(f.read_text()); w = own(j["words"] if isinstance(j, dict) and "words" in j else j) if isinstance(j, list) or "words" in j else words(j.get("alignment") or j.get("normalized_alignment") or j)
         res[f.stem] = w
         if f.stem.isdigit(): res[str(int(f.stem))] = w
     (d / "scenes").mkdir(exist_ok=True); (d / "scenes" / "words.json").write_text(json.dumps(res, ensure_ascii=False))
@@ -36,6 +42,7 @@ def main(d):
 
 def demo():
     al = {"characters": list("[calm] Olá, mundo!"), "character_start_times_seconds": [i / 10 for i in range(18)], "character_end_times_seconds": [(i + 1) / 10 for i in range(18)]}
+    assert own([{"word": " hi", "start": 0, "end": .4}]) == [{"w": "hi", "s": 0, "e": .4}]
     w = words(al); assert [x["w"] for x in w] == ["Olá,", "mundo!"] and w[0]["s"] == 0.7 and w[1]["e"] == 1.8, w
 
 if __name__ == "__main__":

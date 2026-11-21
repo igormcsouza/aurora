@@ -17,6 +17,8 @@ In Claude Code: `/aurora <command>`. In Codex: `$aurora <command>` or plain lang
 | `adopt` | Take over a project that already has videos: scan, propose the layout, reorganize after your OK. |
 | `resume[=slug]` | List unfinished videos, or continue one from its first pending step. |
 | `selftest` | Prove the free/cheap tiers work on this machine. |
+| `status` | Show every video, its steps and TTS estimate; writes `aurora/JOURNEY.md`. |
+| `create ... --estimate` | Print the cost estimate only; nothing is spent. |
 | `help` | Print the command table and stop. |
 | *anything else* | Plain language: Aurora picks the right command (or helper) and runs it. See [Ask](#ask). |
 

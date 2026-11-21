@@ -20,6 +20,7 @@ flowchart LR
 | 4 Voice | `video-producer` | `scenes/NN.mp3`, `cues.json` (word timing), `durations.json` |
 | 5 Draft | `video-animator` + `video-producer` | low-quality draft, scene badges, contact sheet, `qa.md` |
 | 6 Review | **you** | scene-numbered feedback |
+| 6 Review | main chat | `qa_check.py` must print OK; optional local page `review.py` saves `review.json` (notes per scene, approve) |
 | 7 Final | `video-animator` + `video-producer` | 1080p, CRF 17, about -16 LUFS |
 | 8 Package | `video-producer` + `video-critic` | `package/` + anti-slop gate, titles and thumbnails scored |
 

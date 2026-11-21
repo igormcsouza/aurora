@@ -9,6 +9,8 @@
   state.py meta <slug> key=value [...]   record reproducibility facts in state.json "meta" (tts_model, voice_id, seed, ...)
   state.py snapshot <slug>               record tool versions (kit, ffmpeg, blender, node, playwright, manim) in state.json meta.tools
   state.py cost <slug>                   write cost.json: TTS characters and estimated USD, Claude tokens if tokens.json exists
+  state.py estimate [minutes=10] [model]  cost estimate BEFORE spending anything: TTS characters and USD for one full pass (+30% for retakes); writes nothing
+  state.py journey                       write aurora/JOURNEY.md: every video, its steps done/pending, next step, TTS cost (a project dashboard in one file)
   state.py costs                         one line per video (draft + published) from cost.json
 Works from any subfolder: draft_videos/ (or legacy videos/) is found by walking up from the cwd. Published videos live in published_videos/ (see organize.py).
 """
@@ -87,6 +89,18 @@ def cost(slug):
     if (d / "tokens.json").exists(): c["claude_tokens"] = json.loads((d / "tokens.json").read_text()).get("total", {})
     (d / "cost.json").write_text(json.dumps(c, indent=2)); print(json.dumps(c))
 
+def estimate(minutes=10, model="eleven_v4"):
+    chars = int(minutes * 150 * 6.2); one = chars / 1000 * PRICE_PER_1K.get(model, 0.08)   # ~150 words/min, ~6.2 chars/word incl. space
+    print(f"{minutes} min = about {int(minutes * 150)} words, {chars:,} chars; {model}: ${one:.2f} for one pass, about ${one * 1.3:.2f} with retakes (an estimate, not a bill). Nothing was spent.")
+
+def journey():
+    out = ["# Journey", "", "| video | steps | next | TTS est. | topic |", "|---|---|---|---|---|"]
+    for base, tag in ((ROOT, ""), (ROOT.parent / "published_videos", "published ")):
+        for p in sorted(base.glob("*/state.json")) if base.is_dir() else []:
+            st = json.loads(p.read_text()); c = p.parent / "cost.json"; usd = json.loads(c.read_text()).get("tts_usd_est", "-") if c.exists() else "-"
+            n = sum(v["status"] == "done" for v in st["steps"].values()); out.append(f"| {tag}{st['slug']} | {n}/{len(STEPS)} | {pending(st) or 'finished'} | {usd} | {st['topic']} |")
+    f = ROOT.parent / "aurora" / "JOURNEY.md"; f.parent.mkdir(exist_ok=True); f.write_text("\n".join(out) + "\n"); print(f"wrote {f} ({len(out) - 4} videos)")
+
 def costs():
     for base in (ROOT, PUB):
         for f in sorted(base.glob("*/cost.json")) if base.is_dir() else []:
@@ -108,6 +122,8 @@ def main(a):
         s = load(a[1]); s.setdefault("meta", {}).update(dict(kv.split("=", 1) for kv in a[2:])); save(a[1], s)
     elif cmd == "snapshot":
         s = load(a[1]); s.setdefault("meta", {})["tools"] = tool_versions(); save(a[1], s); print(json.dumps(s["meta"]["tools"]))
+    elif cmd == "estimate": estimate(float(a[1]) if len(a) > 1 else 10, a[2] if len(a) > 2 else "eleven_v4")
+    elif cmd == "journey": journey()
     elif cmd == "cost": cost(a[1])
     elif cmd == "costs": costs()
     elif cmd == "tokens":
