@@ -69,8 +69,8 @@ command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1 || { echo "ACT
 mkdir -p "$KIT/web" "$KIT/blender/examples"
 if [[ " $* " == *" --refresh "* ]] || [ ! -f "$KIT/KIT_VERSION" ]; then
   # first run or explicit refresh: overwrite the shared kit files (project files like common.py are never touched)
-  cp -f "$SRC"/web/{engine.html,templates.js,capture.mjs,record.mjs,package.json} "$KIT/web/"
-  cp -f "$SRC"/blender/lib.py "$KIT/blender/"; cp -f "$SRC"/blender/examples/*.py "$KIT/blender/examples/"; cp -f "$SRC"/polish.sh "$KIT/"; cp -f "$SRC"/VERSION "$KIT/KIT_VERSION"
+  cp -f "$SRC"/web/{engine.html,motion.js,templates.js,capture.mjs,render_web.mjs,record.mjs,package.json} "$KIT/web/"
+  cp -f "$SRC"/blender/lib.py "$KIT/blender/"; cp -f "$SRC"/blender/examples/*.py "$KIT/blender/examples/"; cp -f "$SRC"/polish.sh "$SRC"/loudnorm.sh "$SRC"/words.py "$KIT/"; cp -f "$SRC"/VERSION "$KIT/KIT_VERSION"
 elif ! cmp -s "$SRC/VERSION" "$KIT/KIT_VERSION"; then
   echo "NOTE: the skill's visual kit is newer (v$(cat "$SRC/VERSION") vs v$(cat "$KIT/KIT_VERSION")). Run preflight.sh --refresh to update video-kit/web, blender and polish.sh (every scene clip becomes stale)."
 fi
@@ -81,4 +81,4 @@ command -v blender >/dev/null 2>&1 && BL="blender -b -P" || BL=""
 for t in opencode tether bwrap; do command -v $t >/dev/null 2>&1 && TI="${TI:-}$t=yes " || TI="${TI:-}$t=NO "; done
 echo "tiers: ${TI}(tier 0/1 minions need opencode or tether; opencode also needs bwrap; run /aurora selftest once)"
 # Role agents are global (~/.claude/agents, symlinked from the aurora repo); nothing to copy per project.
-echo "READY kit=$KIT run_prefix='$RUN' web='node $KIT/web/capture.mjs <spec.json> <out.mp4> [--draft]' blender='${BL:-unavailable} <script.py> -- anim <dir> [--draft]' polish='$KIT/polish.sh'"
+echo "READY kit=$KIT run_prefix='$RUN' web='node $KIT/web/capture.mjs <spec.json> <out.mp4> [--draft]' web_all='node $KIT/web/render_web.mjs <scenes_dir> <out_dir> [--draft] [--jobs N] [--only id,id]' loudnorm='$KIT/loudnorm.sh <in> <out> [LUFS]' blender='${BL:-unavailable} <script.py> -- anim <dir> [--draft]' polish='$KIT/polish.sh'"

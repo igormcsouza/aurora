@@ -90,3 +90,94 @@ AURORA_TEMPLATES.stat_reveal = ({ tl, el, D, P, beats, ACC, TH }) => {
   tl.fromTo('#world', { scale: .94 }, { scale: 1.04, duration: D, ease: 'sine.inOut' }, 0);
   return t => { const u = clamp((t - t0) / 1.6, 0, 1), v = (P.value || 0) * (1 - Math.pow(1 - u, 3)); num.textContent = t < t0 ? '' : (Number.isInteger(P.value) ? Math.round(v) : v.toFixed(1)) + (P.unit || ''); };
 };
+
+AURORA_TEMPLATES.screenshot_zoom.camera = false; // it runs its own camera on the browser card
+
+// ---- kinetic_words: key sentences whose words land ON the spoken word (use for claims, definitions, the punchline: a few per scene, not the whole narration).
+// P {groups:[{text, emphasis?:[word|index], kind?:'rise'|'pop'|'squash'|'blade', at?:seconds, color?}], size?, hold?}
+// A group starts at g.at, else beats[i], else where its words are found in the narration clock; each word then enters 2 frames before it is spoken.
+// Without a clock it falls back to evenly spread beats, so the scene still plays.
+AURORA_TEMPLATES.kinetic_words = ({ tl, el, D, P, beats, ACC, TH, clock, M }) => {
+  const gs = (P.groups || []).map(g => typeof g === 'string' ? { text: g } : g), n = gs.length, LEAD = 2 / 30;
+  let prev = 0; const plan = gs.map((g, gi) => {
+    const tokens = g.text.split(/\s+/).filter(Boolean);
+    let t0 = g.at ?? beats[gi] ?? (clock.has ? (clock.find(tokens.slice(0, 3).join(' '), prev)?.s ?? prev + 0.3) : 0.4 + gi * (D - 1.2) / Math.max(n, 1));
+    const times = clock.has ? clock.align(tokens, t0) : tokens.map((_, k) => t0 + k * 0.28);
+    prev = times[times.length - 1] + 0.1; return { g, tokens, times, t0 };
+  });
+  plan.forEach(({ g, tokens, times }, gi) => {
+    const chars = g.text.length, size = P.size || Math.round(Math.min(160, 1250 / Math.sqrt(chars))), emph = new Set((g.emphasis || []).map(e => typeof e === 'number' ? e : tokens.findIndex(t => M.norm(t) === M.norm(e))));
+    const box = el(`<div class="abs" style="left:210px;right:210px;top:0;bottom:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:.04em .26em;font-size:${size}px;line-height:1.12;text-align:center"></div>`);
+    const kind = g.kind || ['rise', 'pop', 'squash', 'blade'][gi % 4], ink = g.color || TH.ink;
+    tokens.forEach((tok, k) => {
+      const E = emph.has(k), small = !E && M.norm(tok).length <= 3, t = Math.max(0, times[k] - LEAD), rot = (M.rand(gi * 31 + k) - .5) * 10;
+      const w = el(`<span style="display:inline-block;position:relative;overflow:${kind === 'rise' && !E ? 'hidden' : 'visible'};padding:.06em ${E ? ".1em" : ".02em"};font-weight:${E ? 900 : small ? 600 : 800};font-style:${small ? 'italic' : 'normal'};font-size:${E ? 1.22 : small ? .8 : 1}em;color:${E ? (g.color || ACC[2]) : ink};opacity:${small ? .82 : 1};text-shadow:0 .07em 0 rgba(0,0,0,.25);letter-spacing:-.02em"><span class="in" style="display:inline-block">${E && tok.length <= 11 ? [...tok].map(c => `<span class="ch" style="display:inline-block">${c}</span>`).join('') : tok}</span></span>`, box), inn = w.firstElementChild;
+      const kk = E ? (tok.length <= 11 ? 'letters' : 'pop') : kind;
+      if (kk === 'letters') { const L = inn.querySelectorAll('.ch'); tl.fromTo(L, { y: -90, scale: .3, rotation: i => (i % 2 ? 14 : -14), opacity: 0 }, { y: 0, scale: 1, rotation: 0, opacity: 1, duration: M.pop.dur, ease: M.pop.ease, stagger: .035 }, t); }
+      else if (kk === 'rise') tl.fromTo(inn, { yPercent: 115, opacity: 0 }, { yPercent: 0, opacity: 1, duration: M.smooth.dur, ease: M.smooth.ease }, t);
+      else if (kk === 'squash') tl.fromTo(inn, { scaleX: 1.6, scaleY: .25, y: 40, opacity: 0 }, { scaleX: 1, scaleY: 1, y: 0, opacity: 1, duration: M.pop.dur, ease: M.pop.ease, transformOrigin: '50% 100%' }, t);
+      else if (kk === 'blade') tl.fromTo(inn, { x: -260, skewX: -28, opacity: 0 }, { x: 0, skewX: 0, opacity: 1, duration: M.smooth.dur, ease: M.smooth.ease }, t);
+      else tl.fromTo(inn, { scale: .2, rotation: rot * 2, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: M.pop.dur, ease: M.pop.ease }, t);
+      if (E) { const u = el(`<i style="position:absolute;left:0;right:0;bottom:-.02em;height:.1em;border-radius:99px;background:${ACC[1]};transform-origin:0 50%"></i>`, w); tl.fromTo(u, { scaleX: 0 }, { scaleX: 1, duration: .35, ease: 'power3.out' }, t + .22); }
+    });
+    const nextT = plan[gi + 1] ? plan[gi + 1].times[0] - LEAD - 0.35 : D - 0.4, exit = Math.min(nextT, times[times.length - 1] + (P.hold ?? 1.8));
+    tl.to(box, { y: -70, opacity: 0, duration: .3, ease: 'power2.in' }, Math.max(exit, times[times.length - 1] + 0.5));
+  });
+};
+
+// ---- draw_on: whiteboard. Strokes trace themselves in with a pen following the tip (explainers, diagrams, "how it works" in a full video).
+// P {board?:false (draw straight on the theme background), items:[{kind:'rect'|'circle'|'line'|'arrow'|'path'|'text', x,y, w,h | r | x2,y2 | d | text,size, color?, at?, dur?, say?:'phrase'}]}  (1920x1080 coords)
+// An item starts at item.at, else when its `say` phrase is spoken, else beats[i], else spread over the scene. Pen = a dot at the stroke tip.
+AURORA_TEMPLATES.draw_on = ({ tl, el, D, P, beats, ACC, TH, clock, M }) => {
+  const items = P.items || [], board = P.board !== false, ink = board ? '#23204a' : TH.ink, NS = 'http://www.w3.org/2000/svg';
+  if (board) { const b = el(`<div class="abs" style="left:110px;top:90px;right:110px;bottom:90px;border-radius:26px;background:#f7f4ea;box-shadow:0 40px 100px rgba(10,5,40,.55)"></div>`); tl.fromTo(b, { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: .7, ease: 'power3.out' }, 0); }
+  const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 1920 1080'); svg.setAttribute('style', 'position:absolute;inset:0;width:1920px;height:1080px;overflow:visible'); document.getElementById('world').appendChild(svg);
+  const mk = (tag, a) => { const n = document.createElementNS(NS, tag); Object.entries(a).forEach(([k, v]) => n.setAttribute(k, v)); svg.appendChild(n); return n; };
+  let prev = board ? 0.9 : 0.4; const segs = [];
+  items.forEach((it, i) => {
+    const col = it.color || ACC[i % ACC.length], sw = it.w2 || 9, at = it.at ?? (it.say && clock.find(it.say, 0)?.s) ?? beats[i] ?? prev, k = it.kind || 'path';
+    let node, len, dur = it.dur ?? (k === 'text' ? Math.max(.7, (it.text || '').length * .07) : 0.9), pt;
+    if (k === 'text') {
+      const size = it.size || 64, tx = mk('text', { x: it.x, y: it.y, 'font-size': size, 'font-weight': 800, fill: it.color || ink, 'font-family': "Noto Sans,DejaVu Sans,sans-serif" }); tx.textContent = it.text;
+      const wd = tx.getComputedTextLength() || it.text.length * size * .56, id = 'clip' + i, cp = mk('clipPath', { id }), r = document.createElementNS(NS, 'rect'); r.setAttribute('x', it.x - 6); r.setAttribute('y', it.y - size); r.setAttribute('height', size * 1.4); r.setAttribute('width', 0); cp.appendChild(r); tx.setAttribute('clip-path', `url(#${id})`);
+      tl.fromTo(r, { attr: { width: 0 } }, { attr: { width: wd + 14 }, duration: dur, ease: 'none' }, at); pt = u => ({ x: it.x + wd * u, y: it.y - size * .25 });
+    } else {
+      const d = k === 'rect' ? `M${it.x} ${it.y}H${it.x + it.w}V${it.y + it.h}H${it.x}Z` : k === 'circle' ? `M${it.x - it.r} ${it.y}a${it.r} ${it.r} 0 1 1 ${it.r * 2} 0a${it.r} ${it.r} 0 1 1 ${-it.r * 2} 0` : k === 'line' || k === 'arrow' ? `M${it.x} ${it.y}L${it.x2} ${it.y2}` : it.d;
+      node = mk('path', { d, fill: 'none', stroke: col, 'stroke-width': sw, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }); len = node.getTotalLength(); node.style.strokeDasharray = len; node.style.strokeDashoffset = len;
+      tl.fromTo(node, { strokeDashoffset: len }, { strokeDashoffset: 0, duration: dur, ease: 'power1.inOut' }, at); pt = u => node.getPointAtLength(len * u);
+      if (k === 'arrow') { const a = Math.atan2(it.y2 - it.y, it.x2 - it.x), h = 34, hd = mk('path', { d: `M${it.x2 - h * Math.cos(a - .5)} ${it.y2 - h * Math.sin(a - .5)}L${it.x2} ${it.y2}L${it.x2 - h * Math.cos(a + .5)} ${it.y2 - h * Math.sin(a + .5)}`, fill: 'none', stroke: col, 'stroke-width': sw, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0 }); tl.to(hd, { opacity: 1, duration: .05 }, at + dur); }
+      if (it.fill) { const f = mk('path', { d, fill: col, 'fill-opacity': 0, stroke: 'none' }); svg.insertBefore(f, node); tl.to(f, { attr: { 'fill-opacity': it.fill }, duration: .4 }, at + dur); }
+    }
+    segs.push({ at, dur, pt, ease: k === 'text' ? (u => u) : (u => u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2) }); prev = at + dur + .35;
+  });
+  const pen = mk('circle', { r: 11, fill: '#ff5ea8', stroke: '#fff', 'stroke-width': 4, opacity: 0 });
+  return t => {
+    const s = segs.find(g => t >= g.at && t <= g.at + g.dur + .25); if (!s) { pen.setAttribute('opacity', 0); return; }
+    const p = s.pt(clamp(s.ease(clamp((t - s.at) / s.dur, 0, 1)), 0, 1)); pen.setAttribute('cx', p.x); pen.setAttribute('cy', p.y); pen.setAttribute('opacity', t <= s.at + s.dur ? 1 : 1 - (t - s.at - s.dur) / .25);
+  };
+};
+
+// ---- fake_ui: a terminal / app window that plays a scripted session: typed commands, output, button clicks. Pure function of time.
+// P {title?, steps:[{cmd:'text typed'} | {out:'line', color?} | {click:'Button label'} | {wait:seconds}], size?, at?}   step i starts at step.at, else beats[i], else right after the previous one.
+AURORA_TEMPLATES.fake_ui = ({ tl, el, D, P, beats, ACC, TH }) => {
+  const steps = P.steps || [], fs = P.size || 34, lh = Math.round(fs * 1.5), CPS = 26, H = 720;
+  const win = el(`<div class="abs" style="left:230px;right:230px;top:180px;height:${H}px;border-radius:22px;overflow:hidden;background:#12101f;box-shadow:0 50px 120px rgba(10,5,40,.6)"><div style="height:46px;background:#25223a;display:flex;align-items:center;gap:10px;padding-left:18px"><i style="width:14px;height:14px;border-radius:50%;background:#ff5f57"></i><i style="width:14px;height:14px;border-radius:50%;background:#febc2e"></i><i style="width:14px;height:14px;border-radius:50%;background:#28c840"></i><span style="color:#9a96c0;font:600 20px sans-serif;margin-left:18px">${P.title || 'terminal'}</span></div><div class="body" style="position:absolute;left:34px;right:34px;top:68px;font:600 ${fs}px/${lh}px 'DejaVu Sans Mono',monospace;color:#e8e6ff;white-space:pre-wrap"></div></div>`);
+  const body = win.querySelector('.body'); tl.fromTo(win, { y: 120, opacity: 0, rotationX: 12 }, { y: 0, opacity: 1, rotationX: 0, duration: .7, ease: 'power3.out' }, 0);
+  const cap = Math.floor((H - 110) / lh); let t = P.at ?? 0.9, row = 0; const typed = [], cur = el(`<svg class="abs" style="left:0;top:0;width:34px;height:34px;opacity:0" viewBox="0 0 24 24"><path d="M3 2l7 19 3-8 8-3z" fill="#fff" stroke="#000" stroke-width="1.5"/></svg>`), rg = el(`<div class="abs" style="width:24px;height:24px;border:5px solid #ffd166;border-radius:50%;opacity:0"></div>`);
+  const scroll = (r, at) => { if (r >= cap) tl.to(body, { y: -(r - cap + 1) * lh, duration: .25, ease: 'power2.out' }, at); };
+  steps.forEach((s, i) => {
+    const at = s.at ?? beats[i] ?? t;
+    if (s.wait) { t = at + s.wait; return; }
+    const line = document.createElement('div'); line.style.cssText = 'min-height:' + lh + 'px'; body.appendChild(line); tl.set(line, { opacity: 0 }, 0).set(line, { opacity: 1 }, at);
+    if (s.cmd !== undefined) { const dur = s.cmd.length / CPS; typed.push({ line, text: s.cmd, at, dur }); scroll(row, at); t = at + dur + .35; }
+    else if (s.out !== undefined) { line.textContent = s.out; if (s.color) line.style.color = s.color; scroll(row, at); t = at + .3; }
+    else if (s.click !== undefined) {
+      const bw = s.click.length * fs * .62 + 70, b = document.createElement('span'); b.textContent = s.click; b.style.cssText = `display:inline-block;padding:6px 28px;border-radius:12px;background:${ACC[0]};color:#12101f;font-weight:800`; line.appendChild(b); scroll(row, at);
+      const bx = 230 + 34 + bw / 2, by = 180 + 68 + row * lh + lh / 2 + (row >= cap ? -(row - cap + 1) * lh : 0);
+      tl.set(cur, { x: 1300, y: 200, opacity: 1 }, at).to(cur, { x: bx, y: by, duration: .8, ease: 'power2.inOut' }, at).to(b, { scale: .92, duration: .08, yoyo: true, repeat: 1 }, at + .85)
+        .fromTo(rg, { x: bx - 12, y: by - 12, scale: .3, opacity: 1 }, { scale: 3, opacity: 0, duration: .5 }, at + .85).to(cur, { opacity: 0, duration: .3 }, at + 1.4); t = at + 1.2;
+    }
+    row++;
+  });
+  return t0 => typed.forEach(o => { const n = Math.floor(clamp((t0 - o.at) / o.dur, 0, 1) * o.text.length), blink = Math.floor(t0 * 2) % 2 === 0; o.line.textContent = t0 < o.at ? '' : '$ ' + o.text.slice(0, n) + (n < o.text.length || blink ? '▌' : ''); });
+};
