@@ -30,6 +30,10 @@ Target mix per 10-minute video: web 50-60% of runtime, Blender 10-20%, Manim 20-
 - **Motion blur.** Frames where the camera moves fast are shot as four sub-frames and averaged. Still frames cost nothing extra.
 - **Motion presets** (`M.pop`, `M.smooth`, `M.soft` springs, `M.stagger`, `M.rand`) live in `kit/web/motion.js` for new templates.
 
+## Rendering many scenes
+
+`node video-kit/web/render_web.mjs scenes scenes/final [--draft] [--jobs N] [--only 3,7] [--force]` renders every web scene from `scenes/spec.json`, several at once (default up to 4), and skips scenes whose cache hash is unchanged: spec, custom scene file, words, files named in props, the engine source and draft/final. `video-kit/loudnorm.sh in.mp4 out.mp4 [-14]` does the two-pass loudness finish.
+
 ## Speed
 
 Drafts use `--draft` (web 1280x720, Blender half size, Manim `-ql`); the final renders once at full quality. Each scene is cached by a hash of its spec, audio and kit source: change anything in the kit and every scene re-renders.
