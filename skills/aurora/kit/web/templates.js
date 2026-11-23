@@ -120,8 +120,8 @@ AURORA_TEMPLATES.kinetic_words = ({ tl, el, D, P, beats, ACC, TH, clock, M }) =>
       else tl.fromTo(inn, { scale: .2, rotation: rot * 2, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: M.pop.dur, ease: M.pop.ease }, t);
       if (E) { const u = el(`<i style="position:absolute;left:0;right:0;bottom:-.02em;height:.1em;border-radius:99px;background:${ACC[1]};transform-origin:0 50%"></i>`, w); tl.fromTo(u, { scaleX: 0 }, { scaleX: 1, duration: .35, ease: 'power3.out' }, t + .22); }
     });
-    const nextT = plan[gi + 1] ? plan[gi + 1].times[0] - LEAD - 0.35 : D - 0.4, exit = Math.min(nextT, times[times.length - 1] + (P.hold ?? 1.8));
-    tl.to(box, { y: -70, opacity: 0, duration: .3, ease: 'power2.in' }, Math.max(exit, times[times.length - 1] + 0.5));
+    const last = times[times.length - 1], nextT = plan[gi + 1] ? plan[gi + 1].times[0] - LEAD - 0.35 : D - 0.4;
+    tl.to(box, { y: -70, opacity: 0, duration: .3, ease: 'power2.in' }, Math.max(last + 0.15, Math.min(nextT, last + (P.hold ?? 1.8)))); // leaves before the next group starts, even when the gap is short
   });
 };
 
