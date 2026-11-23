@@ -70,7 +70,7 @@ mkdir -p "$KIT/web" "$KIT/blender/examples"
 if [[ " $* " == *" --refresh "* ]] || [ ! -f "$KIT/KIT_VERSION" ]; then
   # first run or explicit refresh: overwrite the shared kit files (project files like common.py are never touched)
   cp -f "$SRC"/web/{engine.html,motion.js,templates.js,capture.mjs,render_web.mjs,record.mjs,package.json} "$KIT/web/"
-  cp -f "$SRC"/blender/lib.py "$KIT/blender/"; cp -f "$SRC"/blender/examples/*.py "$KIT/blender/examples/"; cp -f "$SRC"/polish.sh "$SRC"/loudnorm.sh "$SRC"/words.py "$SRC"/review.py "$SRC"/qa_check.py "$SRC"/sfx.py "$SRC"/shorts.py "$KIT/"; cp -f "$SRC"/VERSION "$KIT/KIT_VERSION"
+  cp -f "$SRC"/blender/{lib.py,scenario.py,scenario_render.py} "$KIT/blender/"; cp -f "$SRC"/blender/examples/* "$KIT/blender/examples/"; cp -f "$SRC"/polish.sh "$SRC"/loudnorm.sh "$SRC"/words.py "$SRC"/review.py "$SRC"/qa_check.py "$SRC"/sfx.py "$SRC"/shorts.py "$KIT/"; cp -f "$SRC"/VERSION "$KIT/KIT_VERSION"
 elif ! cmp -s "$SRC/VERSION" "$KIT/KIT_VERSION"; then
   echo "NOTE: the skill's visual kit is newer (v$(cat "$SRC/VERSION") vs v$(cat "$KIT/KIT_VERSION")). Run preflight.sh --refresh to update video-kit/web, blender and polish.sh (every scene clip becomes stale)."
 fi
