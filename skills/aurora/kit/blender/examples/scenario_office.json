@@ -1,0 +1,17 @@
+{
+  "duration": 9, "set": "office", "exposure": -0.9,
+  "actors": {
+    "host": {"sp": "H", "look": {"shirt": "#ffffff", "tie": "#c53030", "hairstyle": "cap"}, "path": [[0.5, 9.5, 0, "stand"], [3.5, 1.5, -0.8, "stand"], [9, 1.5, -0.8, "stand"]], "faces": [[0, [0, 0]], [3.5, [-1.0, 2.0]]]},
+    "dev": {"sp": "D", "look": {"shirt": "#2f855a", "skin": "#c68642", "hair": "#1a1a1a", "pants": "#744210", "hairstyle": "spiky"}, "path": [[0, 1, 4.15, "sit"], [9, 1, 4.15, "sit"]], "faces": [[0, [1, 0]]]}
+  },
+  "lines": [
+    {"sp": "H", "start": 3.6, "end": 6.2, "text": "Every request starts at the front desk."},
+    {"sp": "D", "start": 6.4, "end": 8.4, "text": "And ends in my queue."}
+  ],
+  "shots": [
+    {"t0": 0, "t1": 3.5, "from": [-6, -4.6, 3.0], "to": [-3, -4.6, 2.2], "target": [2, 0, 1.2], "lens": 28},
+    {"t0": 3.5, "t1": 6.3, "from": [-0.2, 1.2, 1.8], "to": [0.4, 1.0, 1.8], "target": "host", "lens": 40},
+    {"t0": 6.3, "t1": 9, "from": [-0.6, 1.6, 1.5], "to": [-0.1, 2.0, 1.4], "target": "dev", "lens": 40}
+  ],
+  "labels": [{"text": "request", "at": [2.2, -0.8, 2.1], "t0": 3.8, "t1": 6.0, "size": 0.35}, {"text": "queue", "at": [1, 4.15, 2.3], "t0": 6.6, "t1": 8.6, "size": 0.35}]
+}
